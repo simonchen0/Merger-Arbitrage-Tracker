@@ -88,9 +88,13 @@ describe("breakEvenProbability", () => {
     expect(breakEvenProbability(35, 40, 40)).toBeNull();
   });
 
-  it("exceeds 1 when the target trades above the offer (market implies a higher bid)", () => {
-    // (52 - 40) / (50 - 40) = 1.2
-    expect(breakEvenProbability(52, 50, 40)).toBeCloseTo(1.2, 10);
+  it("returns null when the target trades above the offer (formula would exceed 100%)", () => {
+    // (52 - 40) / (50 - 40) = 1.2 → shown as n/a
+    expect(breakEvenProbability(52, 50, 40)).toBeNull();
+  });
+
+  it("is exactly 100% when the price equals the offer", () => {
+    expect(breakEvenProbability(50, 50, 40)).toBeCloseTo(1, 10);
   });
 
   it("returns null for invalid inputs", () => {

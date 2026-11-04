@@ -38,7 +38,7 @@ P = current price, O = cash offer, B = break price, d = calendar days to expecte
 Rules:
 - Every formula lives in `lib/calc.ts` as a pure function. Components never do financial math inline.
 - Every calc change needs a test with hand-checked numbers. Reference case: P=48, O=50, B=40, d=120 → 4.17%, 12.67% annualized, −16.67% downside, 80% break-even.
-- Handle edge cases explicitly: d ≤ 0 → annualized "—"; negative spread is valid; B ≥ P → break-even "n/a"; a missing price → "unavailable". Never show NaN or Infinity.
+- Handle edge cases explicitly: d ≤ 0 → annualized "—"; negative spread is valid; B ≥ P or P > O → break-even "n/a"; a missing price → "unavailable". Never show NaN or Infinity.
 - Treat dates as `YYYY-MM-DD` UTC calendar dates to avoid off-by-one day counts.
 - Store percentages as decimals (0.0417) and format only at display time.
 

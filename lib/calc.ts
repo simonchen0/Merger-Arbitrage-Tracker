@@ -39,12 +39,13 @@ export function downside(price: number, breakPrice: number): number | null {
  * Completion probability at which the trade's expected value is zero:
  *   p·O + (1 − p)·B = P  →  p = (P − B) / (O − B)
  * This is also the probability implied by the market price.
- * Null if B ≥ P (no downside to price) or O ≤ B (no upside relative to break).
- * Can exceed 1 when the target trades above the offer, i.e. the market expects a higher bid.
+ * Null if B ≥ P (no downside to price), O ≤ B (no upside relative to break),
+ * or P > O (target trades above the offer, so the market expects a higher bid
+ * and the formula would exceed 100%).
  */
 export function breakEvenProbability(price: number, offer: number, breakPrice: number): number | null {
   if (!isPositive(price) || !isPositive(offer) || !isPositive(breakPrice)) return null;
-  if (breakPrice >= price || offer <= breakPrice) return null;
+  if (breakPrice >= price || offer <= breakPrice || price > offer) return null;
   return (price - breakPrice) / (offer - breakPrice);
 }
 
