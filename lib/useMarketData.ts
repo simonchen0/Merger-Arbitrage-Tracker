@@ -1,6 +1,6 @@
 // Fetches live prices for real deals (demo deals never call the API):
 //  - latest quotes for all real tickers, re-fetched on refresh()
-//  - the unaffected price (close before announcement) for deals without a break price
+//  - the unaffected price (close before announcement), the default break price
 import { useEffect, useMemo, useRef, useState } from "react";
 import { unaffectedPrice, type PricePoint } from "./calc";
 import type { Deal, Quote } from "./types";
@@ -71,8 +71,9 @@ export function useMarketData(deals: Deal[] | null) {
     };
   }, [symbols, requestKey]);
 
-  // Unaffected prices: fetched once per ticker + announcement date
-  const needUnaffected = realDeals.filter((d) => d.breakPrice === undefined).map(unaffectedKey);
+  // Unaffected prices: fetched once per ticker + announcement date. Fetched even when
+  // a deal has a manual break price, so the detail page can show it for reference.
+  const needUnaffected = realDeals.map(unaffectedKey);
   const needKey = [...new Set(needUnaffected)].sort().join(",");
 
   useEffect(() => {

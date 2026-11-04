@@ -218,6 +218,7 @@ describe("computeMetrics", () => {
     expect(m.spreadPct).toBeCloseTo(0.041667, 6);
     expect(m.annualized).toBeCloseTo(0.126736, 6);
     expect(m.downside).toBeCloseTo(-0.166667, 6);
+    expect(m.downsideDollars).toBeCloseTo(-8, 10);
     expect(m.breakEven).toBeCloseTo(0.8, 10);
   });
 
@@ -234,6 +235,7 @@ describe("computeMetrics", () => {
     expect(m.spreadPct).toBeNull();
     expect(m.annualized).toBeNull();
     expect(m.downside).toBeNull();
+    expect(m.downsideDollars).toBeNull();
     expect(m.breakEven).toBeNull();
   });
 
@@ -247,6 +249,7 @@ describe("computeMetrics", () => {
     });
     expect(m.spreadPct).toBeCloseTo(0.041667, 6);
     expect(m.downside).toBeNull();
+    expect(m.downsideDollars).toBeNull();
     expect(m.breakEven).toBeNull();
   });
 

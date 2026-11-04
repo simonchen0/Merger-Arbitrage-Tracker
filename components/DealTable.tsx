@@ -1,19 +1,12 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { DealMetrics } from "@/lib/calc";
+import type { DealRow } from "@/lib/dealRow";
 import { pct, signClass, usd } from "@/lib/format";
 import type { Deal } from "@/lib/types";
 import { Badge } from "./Badge";
-
-export type DealRow = {
-  deal: Deal;
-  price: number | null;
-  priceNote: string; // "simulated", "as of 4:00 PM ET", "unavailable", "loading…"
-  breakPrice: number | null;
-  breakIsEstimate: boolean;
-  metrics: DealMetrics;
-};
 
 type SortKey =
   | "target"
@@ -117,6 +110,7 @@ export function DealTable({
     );
   }
 
+  const router = useRouter();
   const sorted = sortRows(rows, sort.key, sort.dir);
 
   return (
@@ -151,10 +145,20 @@ export function DealTable({
           {sorted.map((row) => {
             const { deal, metrics: m } = row;
             return (
-              <tr key={deal.id} className="border-b border-border/60 last:border-0 hover:bg-white/[0.03]">
+              <tr
+                key={deal.id}
+                onClick={() => router.push(`/deals/${deal.id}`)}
+                className="cursor-pointer border-b border-border/60 last:border-0 hover:bg-white/[0.03]"
+              >
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-semibold">{deal.targetTicker}</span>
+                    <Link
+                      href={`/deals/${deal.id}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="font-mono font-semibold hover:text-accent"
+                    >
+                      {deal.targetTicker}
+                    </Link>
                     {deal.isDemo && <Badge kind="demo" title="Fictional deal with simulated prices" />}
                   </div>
                   <div className="text-xs text-muted">{deal.targetName}</div>
@@ -173,7 +177,7 @@ export function DealTable({
                 </td>
                 <td className={`${td} ${row.breakIsEstimate ? "text-est" : ""}`}>{breakEvenCell(row)}</td>
                 <td className={td}>{closeCell(row)}</td>
-                <td className="px-3 py-2 text-right whitespace-nowrap text-xs">
+                <td className="px-3 py-2 text-right whitespace-nowrap text-xs" onClick={(e) => e.stopPropagation()}>
                   <button onClick={() => onEdit(deal)} className="text-muted hover:text-accent">
                     Edit
                   </button>

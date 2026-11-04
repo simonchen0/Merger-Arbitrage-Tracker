@@ -113,7 +113,8 @@ export type DealMetrics = {
   spreadDollars: number | null;
   spreadPct: number | null;
   annualized: number | null;
-  downside: number | null;
+  downside: number | null; // (B − P) / P
+  downsideDollars: number | null; // B − P per share
   breakEven: number | null;
 };
 
@@ -129,13 +130,15 @@ export function computeMetrics(input: {
   const daysToClose = daysBetween(today, expectedCloseDate);
   const s = price === null ? null : spread(price, offer);
   const hasBreak = price !== null && breakPrice !== null;
+  const down = hasBreak ? downside(price, breakPrice) : null;
 
   return {
     daysToClose,
     spreadDollars: s?.dollars ?? null,
     spreadPct: s?.pct ?? null,
     annualized: price === null || daysToClose === null ? null : annualizedReturn(price, offer, daysToClose),
-    downside: hasBreak ? downside(price, breakPrice) : null,
+    downside: down,
+    downsideDollars: down !== null && hasBreak ? breakPrice - price : null,
     breakEven: hasBreak ? breakEvenProbability(price, offer, breakPrice) : null,
   };
 }

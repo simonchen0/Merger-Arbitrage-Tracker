@@ -3,55 +3,14 @@
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/Badge";
 import { DealForm } from "@/components/DealForm";
-import { DealTable, type DealRow } from "@/components/DealTable";
-import { computeMetrics, todayInNewYork, unaffectedPrice } from "@/lib/calc";
+import { DealTable } from "@/components/DealTable";
+import { todayInNewYork } from "@/lib/calc";
+import { buildRow } from "@/lib/dealRow";
 import { deleteDeal, resetDeals, saveDeal, useDeals } from "@/lib/deals";
-import { demoHistory } from "@/lib/demo";
-import { asOfLabel } from "@/lib/format";
-import type { Deal, Quote } from "@/lib/types";
-import { unaffectedKey, useMarketData } from "@/lib/useMarketData";
+import type { Deal } from "@/lib/types";
+import { useMarketData } from "@/lib/useMarketData";
 
 type Filter = "all" | "real" | "demo";
-
-function buildRow(
-  deal: Deal,
-  today: string,
-  quotes: Record<string, Quote>,
-  unaffected: Record<string, number | null>,
-  loading: boolean,
-): DealRow {
-  let price: number | null;
-  let priceNote: string;
-  let unaffectedClose: number | null;
-
-  if (deal.isDemo) {
-    const history = demoHistory(deal, today);
-    price = history.at(-1)?.close ?? null;
-    priceNote = "simulated";
-    unaffectedClose = unaffectedPrice(history, deal.announceDate);
-  } else {
-    const quote = quotes[deal.targetTicker];
-    price = quote?.price ?? null;
-    priceNote = quote ? asOfLabel(quote.asOf) : loading ? "loading…" : "unavailable";
-    unaffectedClose = unaffected[unaffectedKey(deal)] ?? null;
-  }
-
-  const breakPrice = deal.breakPrice ?? unaffectedClose;
-  return {
-    deal,
-    price,
-    priceNote,
-    breakPrice,
-    breakIsEstimate: deal.breakPrice === undefined && unaffectedClose !== null,
-    metrics: computeMetrics({
-      price,
-      offer: deal.offerPrice,
-      breakPrice,
-      expectedCloseDate: deal.expectedCloseDate,
-      today,
-    }),
-  };
-}
 
 export default function Dashboard() {
   const deals = useDeals();

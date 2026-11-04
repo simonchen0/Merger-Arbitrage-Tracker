@@ -22,9 +22,10 @@ lib/types.ts               Deal type
 lib/calc.ts                ALL financial math (pure functions) + calc.test.ts
 lib/deals.ts               localStorage store: useDeals() hook, setDeals(), resetDeals()
 lib/demo.ts                Demo deals (dates relative to first visit) + deterministic fake prices
+lib/dealRow.ts             buildRow(): deal + market data → price, break price, metrics (table + detail)
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
 lib/useMarketData.ts       Client hook: live quotes + unaffected prices for real deals, refresh()
-components/                DealTable, DealForm, SpreadChart, Badge
+components/                DealTable, DealDetail, DealForm, SpreadChart, Badge
 data/seed-deals.json       Real deals seeded on first visit
 scripts/check-data.ts      Manual Yahoo data check
 ```
