@@ -13,6 +13,20 @@ function shiftDate(date: string, days: number): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
+/** Unaffected price for a ticker: the close before the announcement date, or null. */
+export async function fetchUnaffectedPrice(ticker: string, announceDate: string): Promise<number | null> {
+  // Two weeks before the announcement covers weekends and holidays.
+  const from = shiftDate(announceDate, -14);
+  try {
+    const res = await fetch(`/api/history?symbol=${encodeURIComponent(ticker)}&from=${from}`);
+    if (!res.ok) return null;
+    const body: { history: PricePoint[] } = await res.json();
+    return unaffectedPrice(body.history, announceDate);
+  } catch {
+    return null;
+  }
+}
+
 export function unaffectedKey(deal: Deal): string {
   return `${deal.targetTicker}|${deal.announceDate}`;
 }
@@ -66,13 +80,9 @@ export function useMarketData(deals: Deal[] | null) {
       if (requested.current.has(key)) continue;
       requested.current.add(key);
       const [ticker, announceDate] = key.split("|");
-      // Two weeks before the announcement covers weekends and holidays.
-      const from = shiftDate(announceDate, -14);
-      fetch(`/api/history?symbol=${encodeURIComponent(ticker)}&from=${from}`)
-        .then((res) => (res.ok ? res.json() : { history: [] }))
-        .then((body: { history: PricePoint[] }) => unaffectedPrice(body.history, announceDate))
-        .catch(() => null)
-        .then((price) => setUnaffected((prev) => ({ ...prev, [key]: price })));
+      fetchUnaffectedPrice(ticker, announceDate).then((price) =>
+        setUnaffected((prev) => ({ ...prev, [key]: price })),
+      );
     }
   }, [needKey]);
 

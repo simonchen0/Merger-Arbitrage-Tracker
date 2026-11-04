@@ -5,6 +5,7 @@ import {
   computeMetrics,
   daysBetween,
   downside,
+  isValidDate,
   spread,
   spreadHistory,
   todayInNewYork,
@@ -118,6 +119,14 @@ describe("daysBetween", () => {
 
   it("handles leap years", () => {
     expect(daysBetween("2028-02-28", "2028-03-01")).toBe(2);
+  });
+
+  it("isValidDate accepts only real YYYY-MM-DD dates", () => {
+    expect(isValidDate("2026-11-04")).toBe(true);
+    expect(isValidDate("2028-02-29")).toBe(true);
+    expect(isValidDate("2026-02-29")).toBe(false);
+    expect(isValidDate("2026-1-4")).toBe(false);
+    expect(isValidDate("")).toBe(false);
   });
 
   it("returns null for malformed dates", () => {

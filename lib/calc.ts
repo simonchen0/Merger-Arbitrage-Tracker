@@ -61,6 +61,11 @@ function parseDate(s: string): number | null {
   return t;
 }
 
+/** True for a real calendar date in strict YYYY-MM-DD form. */
+export function isValidDate(s: string): boolean {
+  return parseDate(s) !== null;
+}
+
 /** Calendar days from one YYYY-MM-DD date to another (negative if `to` is earlier). */
 export function daysBetween(from: string, to: string): number | null {
   const a = parseDate(from);

@@ -56,6 +56,17 @@ export function resetDeals(): void {
   setDeals(seed());
 }
 
+/** Adds a new deal, or replaces the existing deal with the same id. */
+export function saveDeal(deal: Deal): void {
+  const deals = getDeals();
+  const exists = deals.some((d) => d.id === deal.id);
+  setDeals(exists ? deals.map((d) => (d.id === deal.id ? deal : d)) : [...deals, deal]);
+}
+
+export function deleteDeal(id: string): void {
+  setDeals(getDeals().filter((d) => d.id !== id));
+}
+
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
   return () => listeners.delete(listener);

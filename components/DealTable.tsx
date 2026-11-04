@@ -97,7 +97,15 @@ function closeCell(row: DealRow) {
   );
 }
 
-export function DealTable({ rows }: { rows: DealRow[] }) {
+export function DealTable({
+  rows,
+  onEdit,
+  onDelete,
+}: {
+  rows: DealRow[];
+  onEdit: (deal: Deal) => void;
+  onDelete: (deal: Deal) => void;
+}) {
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "annualized", dir: "desc" });
 
   function toggleSort(key: SortKey) {
@@ -134,6 +142,9 @@ export function DealTable({ rows }: { rows: DealRow[] }) {
                 </th>
               );
             })}
+            <th className="px-3 py-2">
+              <span className="sr-only">Actions</span>
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -162,6 +173,14 @@ export function DealTable({ rows }: { rows: DealRow[] }) {
                 </td>
                 <td className={`${td} ${row.breakIsEstimate ? "text-est" : ""}`}>{breakEvenCell(row)}</td>
                 <td className={td}>{closeCell(row)}</td>
+                <td className="px-3 py-2 text-right whitespace-nowrap text-xs">
+                  <button onClick={() => onEdit(deal)} className="text-muted hover:text-accent">
+                    Edit
+                  </button>
+                  <button onClick={() => onDelete(deal)} className="ml-3 text-muted hover:text-down">
+                    Delete
+                  </button>
+                </td>
               </tr>
             );
           })}

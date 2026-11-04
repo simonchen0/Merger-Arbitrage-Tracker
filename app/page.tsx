@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react";
 import { Badge } from "@/components/Badge";
+import { DealForm } from "@/components/DealForm";
 import { DealTable, type DealRow } from "@/components/DealTable";
 import { computeMetrics, todayInNewYork, unaffectedPrice } from "@/lib/calc";
-import { useDeals } from "@/lib/deals";
+import { deleteDeal, resetDeals, saveDeal, useDeals } from "@/lib/deals";
 import { demoHistory } from "@/lib/demo";
 import { asOfLabel } from "@/lib/format";
 import type { Deal, Quote } from "@/lib/types";
@@ -56,7 +57,16 @@ export default function Dashboard() {
   const deals = useDeals();
   const market = useMarketData(deals);
   const [filter, setFilter] = useState<Filter>("all");
+  const [editing, setEditing] = useState<Deal | "new" | null>(null);
   const { quotes, unaffected, loading } = market;
+
+  function handleDelete(deal: Deal) {
+    if (confirm(`Delete ${deal.targetTicker} (${deal.targetName})?`)) deleteDeal(deal.id);
+  }
+
+  function handleReset() {
+    if (confirm("Replace all deals with the sample data? Your added and edited deals will be lost.")) resetDeals();
+  }
 
   const rows = useMemo(() => {
     if (deals === null) return null; // server render: storage isn't available yet
@@ -101,6 +111,12 @@ export default function Dashboard() {
           >
             {loading ? "Refreshing…" : "Refresh"}
           </button>
+          <button
+            onClick={() => setEditing("new")}
+            className="rounded border border-accent bg-accent/15 px-3 py-1.5 text-xs text-accent hover:bg-accent/25"
+          >
+            + Add deal
+          </button>
         </div>
       </div>
 
@@ -117,7 +133,18 @@ export default function Dashboard() {
           No {filter === "all" ? "" : `${filter} `}deals yet.
         </p>
       ) : (
-        <DealTable rows={rows} />
+        <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
+      )}
+
+      {editing && (
+        <DealForm
+          deal={editing === "new" ? null : editing}
+          onClose={() => setEditing(null)}
+          onSave={(deal) => {
+            saveDeal(deal);
+            setEditing(null);
+          }}
+        />
       )}
 
       <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
@@ -129,6 +156,9 @@ export default function Dashboard() {
           (unaffected close before announcement)
         </span>
         <span>Ann. return = spread % × 365 / days to close · Real prices from Yahoo Finance, delayed ~15 min</span>
+        <button onClick={handleReset} className="ml-auto underline decoration-dotted hover:text-text">
+          Reset to sample data
+        </button>
       </p>
     </div>
   );
