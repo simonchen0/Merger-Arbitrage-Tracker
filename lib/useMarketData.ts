@@ -13,18 +13,23 @@ function shiftDate(date: string, days: number): string {
   return new Date(t).toISOString().slice(0, 10);
 }
 
-/** Unaffected price for a ticker: the close before the announcement date, or null. */
-export async function fetchUnaffectedPrice(ticker: string, announceDate: string): Promise<number | null> {
-  // Two weeks before the announcement covers weekends and holidays.
-  const from = shiftDate(announceDate, -14);
+/** Daily closes for a ticker since `from` (YYYY-MM-DD), or null if unavailable. */
+export async function fetchHistory(ticker: string, from: string): Promise<PricePoint[] | null> {
   try {
     const res = await fetch(`/api/history?symbol=${encodeURIComponent(ticker)}&from=${from}`);
     if (!res.ok) return null;
     const body: { history: PricePoint[] } = await res.json();
-    return unaffectedPrice(body.history, announceDate);
+    return body.history;
   } catch {
     return null;
   }
+}
+
+/** Unaffected price for a ticker: the close before the announcement date, or null. */
+export async function fetchUnaffectedPrice(ticker: string, announceDate: string): Promise<number | null> {
+  // Two weeks before the announcement covers weekends and holidays.
+  const history = await fetchHistory(ticker, shiftDate(announceDate, -14));
+  return history ? unaffectedPrice(history, announceDate) : null;
 }
 
 export function unaffectedKey(deal: Deal): string {

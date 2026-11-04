@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { todayInNewYork } from "@/lib/calc";
+import { useEffect, useMemo, useState } from "react";
+import { spreadHistory, todayInNewYork, type PricePoint } from "@/lib/calc";
 import { buildRow, type DealRow } from "@/lib/dealRow";
 import { deleteDeal, saveDeal, useDeals } from "@/lib/deals";
+import { demoHistory } from "@/lib/demo";
 import { pct, signClass, usd } from "@/lib/format";
 import type { Deal } from "@/lib/types";
-import { useMarketData } from "@/lib/useMarketData";
+import { fetchHistory, useMarketData } from "@/lib/useMarketData";
 import { Badge } from "./Badge";
 import { DealForm } from "./DealForm";
+import { SpreadChart } from "./SpreadChart";
 
 export function DealDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -21,6 +23,21 @@ export function DealDetail({ id }: { id: string }) {
   const [editing, setEditing] = useState(false);
   // Break price being typed (null = not editing, show the saved value).
   const [draft, setDraft] = useState<string | null>(null);
+
+  // Daily closes since announcement for real deals (demo history is generated locally).
+  const historyKey = deal && !deal.isDemo ? `${deal.targetTicker}|${deal.announceDate}` : null;
+  const [history, setHistory] = useState<{ key: string; points: PricePoint[] | null } | null>(null);
+  useEffect(() => {
+    if (!historyKey) return;
+    let cancelled = false;
+    const [ticker, from] = historyKey.split("|");
+    fetchHistory(ticker, from).then((points) => {
+      if (!cancelled) setHistory({ key: historyKey, points });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [historyKey]);
 
   if (deals === null) return <p className="text-sm text-muted">Loading…</p>;
   if (!deal) {
@@ -66,6 +83,14 @@ export function DealDetail({ id }: { id: string }) {
       router.push("/");
     }
   }
+
+  // undefined = still loading, null = unavailable
+  const closes: PricePoint[] | null | undefined = deal.isDemo
+    ? demoHistory(deal, today)
+    : history?.key === historyKey
+      ? history.points
+      : undefined;
+  const spreadPoints = closes ? spreadHistory(closes, deal.offerPrice, deal.announceDate) : [];
 
   const m = row.metrics;
   const est = row.breakIsEstimate;
@@ -171,6 +196,18 @@ export function DealDetail({ id }: { id: string }) {
           est={est}
         />
       </div>
+
+      {/* Spread history */}
+      <section className="space-y-2 rounded border border-border bg-panel p-4">
+        <h2 className="text-sm font-semibold">Spread history</h2>
+        {closes === undefined ? (
+          <p className="py-10 text-center text-sm text-muted">Loading price history…</p>
+        ) : closes === null ? (
+          <p className="py-10 text-center text-sm text-muted">Price history unavailable for {deal.targetTicker}.</p>
+        ) : (
+          <SpreadChart points={spreadPoints} isDemo={deal.isDemo} />
+        )}
+      </section>
 
       {/* Break price + scenario */}
       <div className="grid gap-4 md:grid-cols-2">

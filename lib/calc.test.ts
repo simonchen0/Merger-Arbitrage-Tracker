@@ -186,6 +186,7 @@ describe("spreadHistory", () => {
   it("computes the daily spread from the announcement day onward", () => {
     const result = spreadHistory(history, 50, "2026-03-09");
     expect(result.map((r) => r.date)).toEqual(["2026-03-09", "2026-03-10", "2026-03-11"]);
+    expect(result.map((r) => r.close)).toEqual([47, 48, 49]);
     expect(result[0].spreadPct).toBeCloseTo(3 / 47, 10);
     expect(result[1].spreadPct).toBeCloseTo(2 / 48, 10);
     expect(result[2].spreadPct).toBeCloseTo(1 / 49, 10);

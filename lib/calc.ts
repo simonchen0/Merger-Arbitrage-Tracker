@@ -96,16 +96,14 @@ export function unaffectedPrice(history: PricePoint[], announceDate: string): nu
   return before.length ? before[before.length - 1].close : null;
 }
 
+export type SpreadPoint = { date: string; close: number; spreadPct: number };
+
 /** Daily spread % ((O − close) / close) from the announcement date onward, sorted by date. */
-export function spreadHistory(
-  history: PricePoint[],
-  offer: number,
-  announceDate: string,
-): { date: string; spreadPct: number }[] {
+export function spreadHistory(history: PricePoint[], offer: number, announceDate: string): SpreadPoint[] {
   if (!isPositive(offer)) return [];
   return validSorted(history)
     .filter((p) => p.date >= announceDate)
-    .map((p) => ({ date: p.date, spreadPct: (offer - p.close) / p.close }));
+    .map((p) => ({ date: p.date, close: p.close, spreadPct: (offer - p.close) / p.close }));
 }
 
 export type DealMetrics = {
