@@ -20,10 +20,11 @@ app/api/quotes/route.ts    Latest prices for a list of tickers
 app/api/history/route.ts   Daily closes for one ticker
 lib/types.ts               Deal type
 lib/calc.ts                ALL financial math (pure functions) + calc.test.ts
-lib/deals.ts               localStorage load/save, seed on first visit, reset
-lib/demo.ts                Deterministic fake price history for demo deals
-components/                DealTable, DealForm, SpreadChart
-data/seed-deals.json       Starting deals (real + demo)
+lib/deals.ts               localStorage store: useDeals() hook, setDeals(), resetDeals()
+lib/demo.ts                Demo deals (dates relative to first visit) + deterministic fake prices
+lib/format.ts              Display formatting (usd, pct, sign colors)
+components/                DealTable, DealForm, SpreadChart, Badge
+data/seed-deals.json       Real deals seeded on first visit
 scripts/check-data.ts      Manual Yahoo data check
 ```
 
