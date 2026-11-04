@@ -10,3 +10,6 @@ export type Deal = {
   breakPrice?: number; // user override; otherwise the unaffected price is used (estimate)
   sourceUrl?: string;
 };
+
+/** Latest market price from /api/quotes. */
+export type Quote = { symbol: string; name: string | null; price: number; asOf: string };

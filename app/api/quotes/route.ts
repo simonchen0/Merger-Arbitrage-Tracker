@@ -3,13 +3,12 @@
 // Prices are Yahoo's regular-market price (delayed ~15 min), cached briefly on the server.
 import { cacheLife } from "next/cache";
 import YahooFinance from "yahoo-finance2";
+import type { Quote } from "@/lib/types";
 
 const yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
 const SYMBOL_RE = /^[A-Z0-9.\-^=]{1,15}$/;
 const MAX_SYMBOLS = 50;
-
-export type Quote = { symbol: string; name: string | null; price: number; asOf: string };
 
 async function fetchQuotes(symbols: string[]): Promise<Quote[]> {
   "use cache";

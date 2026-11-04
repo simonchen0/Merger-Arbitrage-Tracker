@@ -14,6 +14,16 @@ export function pct(x: number | null | undefined, empty = "—", digits = 2): st
   return `${x < 0 && Number(s) !== 0 ? MINUS : ""}${s}%`;
 }
 
+/** "as of 4:00 PM ET" for today, "as of Nov 3, 4:00 PM ET" for earlier days (New York time). */
+export function asOfLabel(iso: string, now: Date = new Date()): string {
+  const t = new Date(iso);
+  const ny = { timeZone: "America/New_York" } as const;
+  const sameDay = t.toLocaleDateString("en-US", ny) === now.toLocaleDateString("en-US", ny);
+  const time = t.toLocaleTimeString("en-US", { ...ny, hour: "numeric", minute: "2-digit" });
+  const day = t.toLocaleDateString("en-US", { ...ny, month: "short", day: "numeric" });
+  return `as of ${sameDay ? "" : `${day}, `}${time} ET`;
+}
+
 /** Tailwind text color for a signed value. */
 export function signClass(x: number | null | undefined): string {
   if (x === null || x === undefined || x === 0) return "text-text";
