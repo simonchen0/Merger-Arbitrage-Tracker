@@ -16,6 +16,7 @@ A dashboard for tracking announced **all-cash** M&A deals from an event-driven/m
 ```
 app/page.tsx               Dashboard (sortable/filterable deal table)
 app/deals/[id]/page.tsx    Deal detail (metrics, editable break price, spread chart)
+app/not-found.tsx, error.tsx   Themed 404 and error pages (the Next defaults are white)
 app/api/quotes/route.ts    Latest prices for a list of tickers
 app/api/history/route.ts   Daily closes for one ticker
 lib/types.ts               Deal type

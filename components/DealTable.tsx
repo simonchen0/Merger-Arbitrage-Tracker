@@ -20,12 +20,13 @@ type SortKey =
   | "breakEven"
   | "daysToClose";
 
-const COLUMNS: { key: SortKey; label: string; align: "left" | "right" }[] = [
+// hideSm: dropped on phones to leave room for the key metrics (all of it is on the detail page)
+const COLUMNS: { key: SortKey; label: string; align: "left" | "right"; hideSm?: boolean }[] = [
   { key: "target", label: "Target", align: "left" },
-  { key: "acquirer", label: "Acquirer", align: "left" },
+  { key: "acquirer", label: "Acquirer", align: "left", hideSm: true },
   { key: "price", label: "Price", align: "right" },
-  { key: "offer", label: "Offer", align: "right" },
-  { key: "spreadDollars", label: "Spread $", align: "right" },
+  { key: "offer", label: "Offer", align: "right", hideSm: true },
+  { key: "spreadDollars", label: "Spread $", align: "right", hideSm: true },
   { key: "spreadPct", label: "Spread %", align: "right" },
   { key: "annualized", label: "Ann. Return", align: "right" },
   { key: "downside", label: "Downside", align: "right" },
@@ -114,8 +115,10 @@ export function DealTable({
   const sorted = sortRows(rows, sort.key, sort.dir);
 
   return (
-    <div className="overflow-x-auto rounded border border-border bg-panel">
-      <table className="w-full min-w-[1000px] text-sm">
+    // `relative` keeps the sr-only header cell inside this scroll box; otherwise it
+    // escapes the clipping and makes the whole page scroll sideways on phones.
+    <div className="relative overflow-x-auto rounded border border-border bg-panel">
+      <table className="w-full min-w-[760px] text-sm md:min-w-[1000px]">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-muted">
           <tr>
             {COLUMNS.map((c) => {
@@ -124,7 +127,10 @@ export function DealTable({
                 <th
                   key={c.key}
                   aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
-                  className={`px-3 py-2 font-medium ${c.align === "left" ? "text-left" : "text-right"}`}
+                  className={`px-3 py-2 font-medium ${c.align === "left" ? "text-left" : "text-right"} ${
+                    // Ticker stays pinned while the metrics scroll.
+                    c.key === "target" ? "sticky left-0 z-10 bg-panel" : c.hideSm ? "hidden md:table-cell" : ""
+                  }`}
                 >
                   <button
                     onClick={() => toggleSort(c.key)}
@@ -150,7 +156,7 @@ export function DealTable({
                 onClick={() => router.push(`/deals/${deal.id}`)}
                 className="cursor-pointer border-b border-border/60 last:border-0 hover:bg-white/[0.03]"
               >
-                <td className="px-3 py-2">
+                <td className="sticky left-0 z-10 bg-panel px-3 py-2">
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/deals/${deal.id}`}
@@ -161,15 +167,15 @@ export function DealTable({
                     </Link>
                     {deal.isDemo && <Badge kind="demo" title="Fictional deal with simulated prices" />}
                   </div>
-                  <div className="text-xs text-muted">{deal.targetName}</div>
+                  <div className="max-w-[6.5rem] truncate text-xs text-muted md:max-w-none">{deal.targetName}</div>
                 </td>
-                <td className="px-3 py-2 text-muted">{deal.acquirerName}</td>
+                <td className="hidden px-3 py-2 text-muted md:table-cell">{deal.acquirerName}</td>
                 <td className={td}>
                   <div>{usd(row.price)}</div>
                   <div className="text-xs text-muted">{row.priceNote}</div>
                 </td>
-                <td className={td}>{usd(deal.offerPrice)}</td>
-                <td className={`${td} ${signClass(m.spreadDollars)}`}>{usd(m.spreadDollars)}</td>
+                <td className={`${td} hidden md:table-cell`}>{usd(deal.offerPrice)}</td>
+                <td className={`${td} hidden md:table-cell ${signClass(m.spreadDollars)}`}>{usd(m.spreadDollars)}</td>
                 <td className={`${td} ${signClass(m.spreadPct)}`}>{pct(m.spreadPct)}</td>
                 <td className={`${td} ${signClass(m.annualized)}`}>{pct(m.annualized)}</td>
                 <td className={`${td} ${row.breakIsEstimate ? "text-est" : signClass(m.downside)}`}>

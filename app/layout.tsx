@@ -20,7 +20,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <Link href="/" className="font-mono text-sm font-semibold tracking-wider text-accent">
               MERGER ARB TRACKER
             </Link>
-            <span className="text-xs text-muted">All-cash deals · Prices delayed ~15 min</span>
+            <span className="hidden text-xs text-muted sm:inline">All-cash deals · Prices delayed ~15 min</span>
           </div>
         </header>
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>

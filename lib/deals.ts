@@ -18,12 +18,29 @@ function seed(): Deal[] {
   return [...(seedDeals as Deal[]), ...createDemoDeals(todayInNewYork())];
 }
 
+/** Guards against hand-edited or damaged storage: a bad entry would otherwise crash the page. */
+function isDeal(x: unknown): x is Deal {
+  if (typeof x !== "object" || x === null) return false;
+  const d = x as Record<string, unknown>;
+  return (
+    typeof d.id === "string" &&
+    typeof d.isDemo === "boolean" &&
+    typeof d.targetTicker === "string" &&
+    typeof d.targetName === "string" &&
+    typeof d.acquirerName === "string" &&
+    typeof d.offerPrice === "number" &&
+    typeof d.announceDate === "string" &&
+    typeof d.expectedCloseDate === "string"
+  );
+}
+
 function load(): Deal[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed as Deal[];
+      // Keep the valid deals and drop the rest.
+      if (Array.isArray(parsed)) return parsed.filter(isDeal);
     }
   } catch {
     // Unreadable or corrupt storage: fall through to the seed data.

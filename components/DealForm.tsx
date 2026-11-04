@@ -185,7 +185,7 @@ export function DealForm({
       <form onSubmit={handleSubmit} noValidate className="space-y-5 p-5">
         <div className="flex items-baseline justify-between">
           <h2 className="text-base font-semibold">{deal ? "Edit deal" : "Add deal"}</h2>
-          <span className="text-xs text-muted">All-cash deals · terms from the press release or 8-K</span>
+          <span className="hidden text-xs text-muted sm:inline">All-cash deals · terms from the press release or 8-K</span>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -256,7 +256,8 @@ export function DealForm({
           </Field>
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-border pt-4">
+        {/* Pinned to the bottom of the dialog so it stays reachable on short screens */}
+        <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-border bg-panel px-5 py-4">
           <button type="button" onClick={onClose} className="rounded border border-border px-4 py-1.5 text-sm text-muted hover:text-text">
             Cancel
           </button>

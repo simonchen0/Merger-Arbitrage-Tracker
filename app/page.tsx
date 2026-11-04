@@ -88,11 +88,35 @@ export default function Dashboard() {
       {rows === null ? (
         <p className="text-sm text-muted">Loading…</p>
       ) : rows.length === 0 ? (
-        <p className="rounded border border-border bg-panel px-3 py-6 text-center text-sm text-muted">
-          No {filter === "all" ? "" : `${filter} `}deals yet.
-        </p>
+        <div className="space-y-3 rounded border border-border bg-panel px-3 py-10 text-center text-sm text-muted">
+          {deals && deals.length === 0 ? (
+            <>
+              <p>No deals tracked yet.</p>
+              <div className="flex justify-center gap-4 text-xs">
+                <button onClick={() => setEditing("new")} className="text-accent hover:underline">
+                  + Add a deal
+                </button>
+                <button onClick={resetDeals} className="text-accent hover:underline">
+                  Load sample deals
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p>No {filter} deals.</p>
+              <button onClick={() => setFilter("all")} className="text-xs text-accent hover:underline">
+                Show all deals
+              </button>
+            </>
+          )}
+        </div>
       ) : (
-        <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
+        <>
+          <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
+          <p className="text-xs text-muted md:hidden">
+            Swipe the table sideways for annualized return, downside, break-even, and close date.
+          </p>
+        </>
       )}
 
       {editing && (
