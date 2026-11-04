@@ -31,7 +31,7 @@ export function buildRow(
     const history = demoHistory(deal, today);
     price = history.at(-1)?.close ?? null;
     priceNote = "simulated";
-    unaffected = unaffectedPrice(history, deal.announceDate);
+    unaffected = unaffectedPrice(history, deal.announceDate, deal.unaffectedDate);
   } else {
     const quote = quotes[deal.targetTicker];
     price = quote?.price ?? null;

@@ -90,9 +90,21 @@ function validSorted(history: PricePoint[]): { date: string; close: number }[] {
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-/** Unaffected price: the close on the last trading day before the announcement date. */
-export function unaffectedPrice(history: PricePoint[], announceDate: string): number | null {
-  const before = validSorted(history).filter((p) => p.date < announceDate);
+/**
+ * Unaffected price: the close on the last trading day before the announcement date.
+ *
+ * When news leaked before the announcement, that close already includes the run-up.
+ * Pass `unaffectedDate` (the last day before the rumors, as stated in the company's
+ * filing) to use the close on or before that date instead. A date that isn't before
+ * the announcement is ignored.
+ */
+export function unaffectedPrice(
+  history: PricePoint[],
+  announceDate: string,
+  unaffectedDate?: string,
+): number | null {
+  const cutoff = unaffectedDate && unaffectedDate < announceDate ? unaffectedDate : null;
+  const before = validSorted(history).filter((p) => (cutoff ? p.date <= cutoff : p.date < announceDate));
   return before.length ? before[before.length - 1].close : null;
 }
 

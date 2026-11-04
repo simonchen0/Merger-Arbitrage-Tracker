@@ -1,1 +1,71 @@
-[]
+[
+  {
+    "id": "ptc-schneider",
+    "isDemo": false,
+    "targetName": "PTC Inc.",
+    "targetTicker": "PTC",
+    "acquirerName": "Schneider Electric",
+    "offerPrice": 205,
+    "announceDate": "2026-10-05",
+    "expectedCloseDate": "2027-09-30",
+    "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0000857005/000119312526413124/d174191dex991.htm"
+  },
+  {
+    "id": "vrns-proofpoint",
+    "isDemo": false,
+    "targetName": "Varonis Systems",
+    "targetTicker": "VRNS",
+    "acquirerName": "Proofpoint (Thoma Bravo)",
+    "offerPrice": 49.75,
+    "announceDate": "2026-10-15",
+    "unaffectedDate": "2026-06-22",
+    "expectedCloseDate": "2027-06-30",
+    "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001361113/000121390026109901/ea030861001ex99-1.htm"
+  },
+  {
+    "id": "adt-thrive",
+    "isDemo": false,
+    "targetName": "ADT Inc.",
+    "targetTicker": "ADT",
+    "acquirerName": "Thrive Holdings",
+    "offerPrice": 10,
+    "announceDate": "2026-10-29",
+    "unaffectedDate": "2026-10-27",
+    "expectedCloseDate": "2027-03-31",
+    "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001703056/000119312526437123/d572133dex991.htm"
+  },
+  {
+    "id": "ccc-gtcr",
+    "isDemo": false,
+    "targetName": "CCC Intelligent Solutions",
+    "targetTicker": "CCC",
+    "acquirerName": "GTCR and Elliott",
+    "offerPrice": 7.75,
+    "announceDate": "2026-10-15",
+    "unaffectedDate": "2026-07-09",
+    "expectedCloseDate": "2027-03-31",
+    "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001818201/000119312526422320/d140608dex991.htm"
+  },
+  {
+    "id": "pcrx-viatris",
+    "isDemo": false,
+    "targetName": "Pacira BioSciences",
+    "targetTicker": "PCRX",
+    "acquirerName": "Viatris",
+    "offerPrice": 36.5,
+    "announceDate": "2026-10-08",
+    "expectedCloseDate": "2026-12-31",
+    "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001396814/000110465926114571/tm2627240d2_ex99-1.htm"
+  },
+  {
+    "id": "mg-hig",
+    "isDemo": false,
+    "targetName": "MISTRAS Group",
+    "targetTicker": "MG",
+    "acquirerName": "H.I.G. Capital",
+    "offerPrice": 20.35,
+    "announceDate": "2026-09-18",
+    "expectedCloseDate": "2027-03-31",
+    "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001436126/000114036126037107/ef20082419_ex99-1.htm"
+  }
+]

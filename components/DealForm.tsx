@@ -13,6 +13,7 @@ type Fields = {
   offerPrice: string;
   announceDate: string;
   expectedCloseDate: string;
+  unaffectedDate: string;
   breakPrice: string;
   sourceUrl: string;
 };
@@ -32,6 +33,7 @@ function toFields(deal: Deal | null): Fields {
     offerPrice: deal ? String(deal.offerPrice) : "",
     announceDate: deal?.announceDate ?? "",
     expectedCloseDate: deal?.expectedCloseDate ?? "",
+    unaffectedDate: deal?.unaffectedDate ?? "",
     breakPrice: deal?.breakPrice !== undefined ? String(deal.breakPrice) : "",
     sourceUrl: deal?.sourceUrl ?? "",
   };
@@ -53,6 +55,12 @@ function validate(f: Fields, today: string): Errors {
   if (!isValidDate(f.expectedCloseDate)) e.expectedCloseDate = "Enter a valid date";
   else if (isValidDate(f.announceDate) && f.expectedCloseDate <= f.announceDate)
     e.expectedCloseDate = "Must be after the announcement date";
+
+  if (f.unaffectedDate.trim()) {
+    if (!isValidDate(f.unaffectedDate)) e.unaffectedDate = "Enter a valid date, or leave blank";
+    else if (isValidDate(f.announceDate) && f.unaffectedDate >= f.announceDate)
+      e.unaffectedDate = "Must be before the announcement date";
+  }
 
   if (f.breakPrice.trim()) {
     const b = Number(f.breakPrice);
@@ -115,13 +123,13 @@ export function DealForm({
     if (result.status === "ok" && !fields.targetName.trim() && result.quote.name) {
       update("targetName", result.quote.name);
     }
-    if (result.status === "ok") void suggestBreak(ticker, fields.announceDate);
+    if (result.status === "ok") void suggestBreak(ticker, fields.announceDate, fields.unaffectedDate);
     return result;
   }
 
-  async function suggestBreak(ticker: string, announceDate: string) {
+  async function suggestBreak(ticker: string, announceDate: string, unaffectedDate: string) {
     if (isDemo || !isValidDate(announceDate)) return;
-    setSuggestedBreak(await fetchUnaffectedPrice(ticker, announceDate));
+    setSuggestedBreak(await fetchUnaffectedPrice(ticker, announceDate, isValidDate(unaffectedDate) ? unaffectedDate : undefined));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -140,6 +148,7 @@ export function DealForm({
     // If Yahoo is down ("error"), allow saving: the price will show as unavailable.
 
     const breakPrice = fields.breakPrice.trim() ? Number(fields.breakPrice) : undefined;
+    const unaffectedDate = fields.unaffectedDate.trim() || undefined;
     const sourceUrl = fields.sourceUrl.trim() || undefined;
     onSave({
       id: deal?.id ?? crypto.randomUUID(),
@@ -150,6 +159,7 @@ export function DealForm({
       offerPrice: Number(fields.offerPrice),
       announceDate: fields.announceDate,
       expectedCloseDate: fields.expectedCloseDate,
+      ...(unaffectedDate && { unaffectedDate }),
       ...(breakPrice !== undefined && { breakPrice }),
       ...(sourceUrl && { sourceUrl }),
     });
@@ -204,12 +214,29 @@ export function DealForm({
               type="date"
               value={fields.announceDate}
               onChange={set("announceDate")}
-              onBlur={() => check.status === "ok" && void suggestBreak(check.ticker, fields.announceDate)}
+              onBlur={() =>
+                check.status === "ok" && void suggestBreak(check.ticker, fields.announceDate, fields.unaffectedDate)
+              }
               className={`${inputCls} num`}
             />
           </Field>
           <Field label="Expected close date" error={errors.expectedCloseDate}>
             <input type="date" value={fields.expectedCloseDate} onChange={set("expectedCloseDate")} className={`${inputCls} num`} />
+          </Field>
+          <Field
+            label="Unaffected date (optional)"
+            error={errors.unaffectedDate}
+            hint={{ cls: "text-muted", text: "Last day before deal rumors, if news leaked. Blank = day before announcement." }}
+          >
+            <input
+              type="date"
+              value={fields.unaffectedDate}
+              onChange={set("unaffectedDate")}
+              onBlur={() =>
+                check.status === "ok" && void suggestBreak(check.ticker, fields.announceDate, fields.unaffectedDate)
+              }
+              className={`${inputCls} num`}
+            />
           </Field>
           <Field
             label="Break price ($, optional)"

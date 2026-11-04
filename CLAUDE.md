@@ -26,7 +26,7 @@ lib/dealRow.ts             buildRow(): deal + market data → price, break price
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
 lib/useMarketData.ts       Client hook: live quotes + unaffected prices for real deals, refresh()
 components/                DealTable, DealDetail, DealForm, SpreadChart, Badge
-data/seed-deals.json       Real deals seeded on first visit
+data/seed-deals.json       Real deals seeded on first visit (existing browsers keep their stored list: use "Reset to sample data" to pick up seed changes). Terms come from SEC 8-K exhibits; expected close = end of the company-guided window.
 scripts/check-data.ts      Manual Yahoo data check
 ```
 
@@ -36,7 +36,7 @@ P = current price, O = cash offer, B = break price, d = calendar days to expecte
 - Annualized return = (O − P) / P × 365 / d (simple, calendar days)
 - Downside = (B − P) / P
 - Break-even probability = (P − B) / (O − B)
-- Default break price = the unaffected price (close on the last trading day before announcement)
+- Default break price = the unaffected price (close on the last trading day before announcement). If news leaked first, the deal's optional `unaffectedDate` (the last day before rumors, per the company's filing) is used instead.
 
 Rules:
 - Every formula lives in `lib/calc.ts` as a pure function. Components never do financial math inline.

@@ -25,15 +25,24 @@ export async function fetchHistory(ticker: string, from: string): Promise<PriceP
   }
 }
 
-/** Unaffected price for a ticker: the close before the announcement date, or null. */
-export async function fetchUnaffectedPrice(ticker: string, announceDate: string): Promise<number | null> {
-  // Two weeks before the announcement covers weekends and holidays.
-  const history = await fetchHistory(ticker, shiftDate(announceDate, -14));
-  return history ? unaffectedPrice(history, announceDate) : null;
+/**
+ * Unaffected price for a ticker: the close before the announcement date (or on/before
+ * `unaffectedDate` when news leaked earlier), or null.
+ */
+export async function fetchUnaffectedPrice(
+  ticker: string,
+  announceDate: string,
+  unaffectedDate?: string,
+): Promise<number | null> {
+  // Two weeks before the relevant date covers weekends and holidays.
+  const start = unaffectedDate && unaffectedDate < announceDate ? unaffectedDate : announceDate;
+  const history = await fetchHistory(ticker, shiftDate(start, -14));
+  return history ? unaffectedPrice(history, announceDate, unaffectedDate) : null;
 }
 
+// "TICKER|announceDate|unaffectedDate" (unaffectedDate is empty when not set)
 export function unaffectedKey(deal: Deal): string {
-  return `${deal.targetTicker}|${deal.announceDate}`;
+  return `${deal.targetTicker}|${deal.announceDate}|${deal.unaffectedDate ?? ""}`;
 }
 
 export function useMarketData(deals: Deal[] | null) {
@@ -76,7 +85,7 @@ export function useMarketData(deals: Deal[] | null) {
     };
   }, [symbols, requestKey]);
 
-  // Unaffected prices: fetched once per ticker + announcement date. Fetched even when
+  // Unaffected prices: fetched once per ticker + announcement/unaffected date. Fetched even when
   // a deal has a manual break price, so the detail page can show it for reference.
   const needUnaffected = realDeals.map(unaffectedKey);
   const needKey = [...new Set(needUnaffected)].sort().join(",");
@@ -85,8 +94,8 @@ export function useMarketData(deals: Deal[] | null) {
     for (const key of needKey ? needKey.split(",") : []) {
       if (requested.current.has(key)) continue;
       requested.current.add(key);
-      const [ticker, announceDate] = key.split("|");
-      fetchUnaffectedPrice(ticker, announceDate).then((price) =>
+      const [ticker, announceDate, unaffectedDate] = key.split("|");
+      fetchUnaffectedPrice(ticker, announceDate, unaffectedDate || undefined).then((price) =>
         setUnaffected((prev) => ({ ...prev, [key]: price })),
       );
     }

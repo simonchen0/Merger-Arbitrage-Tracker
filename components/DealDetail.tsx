@@ -150,7 +150,17 @@ export function DealDetail({ id }: { id: string }) {
             </>
           }
         />
-        <Term label="Unaffected price" value={<span className="text-est">{usd(row.unaffected)}</span>} />
+        <Term
+          label="Unaffected price"
+          value={
+            <>
+              <span className="text-est">{usd(row.unaffected)}</span>{" "}
+              <span className="text-xs text-muted">
+                {deal.unaffectedDate ? `close on ${deal.unaffectedDate}` : "close before announcement"}
+              </span>
+            </>
+          }
+        />
         <Term
           label="Source"
           value={
@@ -217,8 +227,11 @@ export function DealDetail({ id }: { id: string }) {
             {est && <Badge kind="est" title="Estimated: unaffected close before the announcement" />}
           </div>
           <p className="text-xs text-muted">
-            Where the target would likely trade if the deal fell apart. Defaults to the unaffected price (the close
-            before the announcement). Type a different price to see the effect.
+            Where the target would likely trade if the deal fell apart. Defaults to the unaffected price (
+            {deal.unaffectedDate
+              ? `the close on ${deal.unaffectedDate}, before news of the deal leaked`
+              : "the close before the announcement"}
+            ). Type a different price to see the effect.
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">

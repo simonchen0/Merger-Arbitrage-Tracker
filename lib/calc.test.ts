@@ -180,6 +180,26 @@ describe("unaffectedPrice", () => {
     expect(unaffectedPrice(history, "2026-03-01")).toBeNull();
     expect(unaffectedPrice([], "2026-03-09")).toBeNull();
   });
+
+  describe("with an explicit unaffected date (news leaked before the announcement)", () => {
+    // The 03-06 close of 32 is already above the true unaffected 03-03 close of 31.
+    it("uses the close ON the unaffected date", () => {
+      expect(unaffectedPrice(history, "2026-03-09", "2026-03-03")).toBe(31);
+    });
+
+    it("uses the last close on or before the date when it is not a trading day", () => {
+      expect(unaffectedPrice(history, "2026-03-09", "2026-03-04")).toBe(31);
+    });
+
+    it("ignores a date that is not before the announcement", () => {
+      expect(unaffectedPrice(history, "2026-03-09", "2026-03-09")).toBe(32);
+      expect(unaffectedPrice(history, "2026-03-09", "2026-03-11")).toBe(32);
+    });
+
+    it("returns null when there is no close on or before that date", () => {
+      expect(unaffectedPrice(history, "2026-03-09", "2026-03-01")).toBeNull();
+    });
+  });
 });
 
 describe("spreadHistory", () => {
