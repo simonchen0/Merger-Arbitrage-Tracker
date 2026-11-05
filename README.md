@@ -8,7 +8,7 @@ A dashboard for tracking announced **all-cash M&A deals** the way an event-drive
 
 ## Features
 
-- **Deal dashboard.** Target, acquirer, live price, offer, spread ($ and %), annualized return, downside, break-even probability, and expected close. Sort any column.
+- **Deal dashboard.** A summary strip (median annualized return, widest spread, median implied completion) above a sortable table of target, acquirer, live price, offer, spread ($ and %), annualized return, downside, break-even probability, and expected close. On tablets and phones the table becomes a card list.
 - **Deal management.** Add, edit, and delete deals. Typing a ticker checks it against market data, fills in the company name, and suggests a break price.
 - **Deal analysis.** A detail page per deal with the metrics above, an editable break price that recalculates live, and a plain-English summary of the trade.
 - **Spread history.** A chart of how each deal's spread has moved since announcement, with a table of the underlying data.
@@ -16,7 +16,7 @@ A dashboard for tracking announced **all-cash M&A deals** the way an event-drive
 
 ![Deal detail](docs/screenshots/deal-detail.png)
 
-*The detail page: terms, six metrics, spread history, and the break-price what-if.*
+*The detail page: risk/reward ladder, if-it-closes and if-it-breaks cards, spread history, and the break-price what-if.*
 
 ## Tech stack
 
@@ -110,7 +110,9 @@ lib/
   deals.ts                 localStorage store (versioned seed data)
   validate.ts              Add/edit form validation
   useMarketData.ts         Client hook for live prices
-components/                DealTable, DealDetail, DealForm, SpreadChart, Badge
+  format.ts                Display formatting (money, percent, as-of time)
+components/                DealTable, DealDetail, PayoffLadder, DealForm, SpreadChart,
+                           SummaryStrip, StatusBar, Badge, shared UI helpers
 data/seed-deals.json       Real deals seeded on first visit
 ```
 
