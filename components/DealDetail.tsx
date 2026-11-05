@@ -133,8 +133,8 @@ export function DealDetail({ id }: { id: string }) {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-sm text-muted">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-base text-muted">
           <span className="text-text">{deal.acquirerName}</span> acquiring for{" "}
           <span className="num text-text">{usd(deal.offerPrice)}</span> cash per share
         </span>
@@ -149,9 +149,9 @@ export function DealDetail({ id }: { id: string }) {
       {/* The two outcomes */}
       <div className="grid gap-4 md:grid-cols-2">
         <section className={cardClass("p-5")}>
-          <h2 className="text-[11px] font-medium uppercase tracking-wider text-muted">If it closes</h2>
-          <div className={`num mt-2 text-4xl font-semibold ${signClass(m.annualized)}`}>{pct(m.annualized)}</div>
-          <div className="text-xs text-muted">
+          <h2 className="text-sm font-medium uppercase tracking-wider text-muted">If it closes</h2>
+          <div className={`num mt-2 text-3xl font-semibold ${signClass(m.annualized)}`}>{pct(m.annualized)}</div>
+          <div className="text-sm text-muted">
             annualized return{m.daysToClose !== null && m.daysToClose > 0 ? ` over ${m.daysToClose} days` : " · past expected close"}
           </div>
           <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
@@ -161,11 +161,11 @@ export function DealDetail({ id }: { id: string }) {
         </section>
 
         <section className={cardClass("p-5")}>
-          <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted">
+          <h2 className="flex items-center gap-2 text-sm font-medium uppercase tracking-wider text-muted">
             If it breaks {est && <Badge kind="est" title="Uses the estimated break price" />}
           </h2>
-          <div className={`num mt-2 text-4xl font-semibold ${est ? "text-est" : signClass(m.downside)}`}>{pct(m.downside)}</div>
-          <div className="text-xs text-muted">
+          <div className={`num mt-2 text-3xl font-semibold ${est ? "text-est" : signClass(m.downside)}`}>{pct(m.downside)}</div>
+          <div className="text-sm text-muted">
             {usd(m.downsideDollars)} per share{row.breakPrice !== null ? `, falling to ${usd(row.breakPrice)}` : ""}
           </div>
           <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
@@ -182,7 +182,7 @@ export function DealDetail({ id }: { id: string }) {
 
       {/* Spread history */}
       <section className={cardClass("space-y-2 p-5")}>
-        <h2 className="text-sm font-semibold">Spread history</h2>
+        <h2 className="text-base font-semibold">Spread history</h2>
         {closes === undefined ? (
           <p className="py-10 text-center text-sm text-muted">Loading price history…</p>
         ) : closes === null ? (
@@ -196,15 +196,12 @@ export function DealDetail({ id }: { id: string }) {
       <div className="grid gap-4 lg:grid-cols-3">
         <section className={cardClass("space-y-4 p-5 lg:col-span-2")}>
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold">Break-price scenario</h2>
+            <h2 className="text-base font-semibold">Break-price scenario</h2>
             {est && <Badge kind="est" title="Estimated: unaffected close before the announcement" />}
           </div>
-          <p className="text-xs text-muted">
-            Where the target would likely trade if the deal fell apart. Defaults to the unaffected price (
-            {deal.unaffectedDate
-              ? `the close on ${deal.unaffectedDate}, before news of the deal leaked`
-              : "the close before the announcement"}
-            ). Drag the slider or type a price to see the effect above.
+          <p className="text-sm text-muted">
+            Where the stock would trade if the deal fell apart. Default: the unaffected price
+            {row.unaffected !== null ? ` (${usd(row.unaffected)})` : ""}.
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -231,7 +228,7 @@ export function DealDetail({ id }: { id: string }) {
             </button>
             {(deal.breakPrice !== undefined || draft !== null) && (
               <button onClick={() => saveBreak(undefined)} className={buttonClass("secondary")}>
-                Use unaffected price{row.unaffected !== null ? ` (${usd(row.unaffected)})` : ""}
+                Reset to unaffected{row.unaffected !== null ? ` (${usd(row.unaffected)})` : ""}
               </button>
             )}
           </div>
@@ -249,28 +246,21 @@ export function DealDetail({ id }: { id: string }) {
               className="h-2 w-full cursor-pointer accent-accent disabled:cursor-not-allowed disabled:opacity-40"
             />
             {range && (
-              <div className="num mt-1 flex justify-between text-[11px] text-muted">
+              <div className="num mt-1 flex justify-between text-sm text-muted">
                 <span>{usd(range.min)}</span>
                 <span>{usd(range.max)}</span>
               </div>
             )}
           </div>
 
-          <p className="text-sm">
-            <span className="text-muted">Downside </span>
-            <span className={`num font-medium ${est ? "text-est" : signClass(m.downside)}`}>{pct(m.downside)}</span>
-            <span className="text-muted"> · Break-even </span>
-            <span className={`num font-medium ${est ? "text-est" : ""}`}>{breakEvenText(row)}</span>
-          </p>
-
-          {draftError && <p className="text-xs text-down">{draftError}</p>}
+          {draftError && <p className="text-sm text-down">{draftError}</p>}
           {usingDraft && draftValue !== deal.breakPrice && (
-            <p className="text-xs text-muted">Showing a what-if. Save to keep this break price.</p>
+            <p className="text-sm text-muted">What-if only. Save to keep it.</p>
           )}
         </section>
 
         <section className={cardClass("p-5")}>
-          <h2 className="text-sm font-semibold">Deal terms</h2>
+          <h2 className="text-base font-semibold">Deal terms</h2>
           <dl className="mt-3 space-y-3">
             <Term label="Announced" value={deal.announceDate} />
             <Term
@@ -286,8 +276,10 @@ export function DealDetail({ id }: { id: string }) {
               value={
                 <>
                   <span className="text-est">{usd(row.unaffected)}</span>{" "}
-                  <span className="text-xs text-muted">
-                    {deal.unaffectedDate ? `close on ${deal.unaffectedDate}` : "close before announcement"}
+                  <span className="text-sm text-muted">
+                    {deal.unaffectedDate
+                      ? `close on ${deal.unaffectedDate}, before news leaked`
+                      : "close before announcement"}
                   </span>
                 </>
               }
@@ -309,8 +301,8 @@ export function DealDetail({ id }: { id: string }) {
         </section>
       </div>
 
-      <section className={cardClass("space-y-2 p-5 text-sm")}>
-        <h2 className="text-sm font-semibold">The trade in one paragraph</h2>
+      <section className={cardClass("space-y-2 p-5 text-base")}>
+        <h2 className="text-base font-semibold">The trade in one paragraph</h2>
         <Scenario row={row} />
       </section>
 
@@ -373,8 +365,7 @@ function Scenario({ row }: { row: DealRow }) {
       {m.breakEven !== null && (
         <p>
           The trade breaks even if the deal closes with probability{" "}
-          <span className="num text-text">{pct(m.breakEven, "—", 1)}</span>. That&apos;s also the probability the
-          market is implying. If you think the deal is more likely than that to close, the spread is attractive.
+          <span className="num text-text">{pct(m.breakEven, "—", 1)}</span>, which is what the market is implying.
         </p>
       )}
     </div>
@@ -383,15 +374,15 @@ function Scenario({ row }: { row: DealRow }) {
 
 function Chip({ children, tone = "" }: { children: React.ReactNode; tone?: string }) {
   return (
-    <span className={`rounded-full border border-border bg-panel-2 px-2.5 py-1 num text-muted ${tone}`}>{children}</span>
+    <span className={`rounded-full border border-border bg-panel-2 px-3 py-1 num text-muted ${tone}`}>{children}</span>
   );
 }
 
 function Term({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs text-muted">{label}</dt>
-      <dd className="num text-sm">{value}</dd>
+      <dt className="text-sm text-muted">{label}</dt>
+      <dd className="num text-base">{value}</dd>
     </div>
   );
 }
@@ -399,9 +390,9 @@ function Term({ label, value }: { label: string; value: React.ReactNode }) {
 function Metric({ label, value, sub, valueClass = "" }: { label: string; value: string; sub: string; valueClass?: string }) {
   return (
     <div>
-      <dt className="text-xs text-muted">{label}</dt>
+      <dt className="text-sm text-muted">{label}</dt>
       <dd className={`num mt-0.5 text-xl font-semibold ${valueClass}`}>{value}</dd>
-      <div className="text-xs text-muted">{sub}</div>
+      <div className="text-sm text-muted">{sub}</div>
     </div>
   );
 }

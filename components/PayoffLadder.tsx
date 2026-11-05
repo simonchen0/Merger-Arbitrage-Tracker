@@ -1,5 +1,5 @@
 import type { DealRow } from "@/lib/dealRow";
-import { pct, usd } from "@/lib/format";
+import { usd } from "@/lib/format";
 import { Badge } from "./Badge";
 import { cardClass } from "./ui";
 
@@ -34,42 +34,42 @@ export function PayoffLadder({ row }: { row: DealRow }) {
         aria-label={`Payoff ladder. Break price ${usd(breakPrice)}, current price ${usd(price)}, offer ${usd(deal.offerPrice)}. You lose ${usd(loss)} per share if the deal breaks and make ${usd(m.spreadDollars)} per share if it closes.`}
       >
         {/* Current price, above the marker */}
-        <div className="relative h-11">
+        <div className="relative h-14">
           {/* Centered on the marker, but never closer than 48px to either end of the bar. */}
           <div
             className="absolute bottom-0 -translate-x-1/2 whitespace-nowrap text-center"
             style={{ left: `clamp(48px, ${pos}%, calc(100% - 48px))` }}
           >
-            <div className="text-[10px] font-medium uppercase tracking-wider text-muted">Price now</div>
-            <div className="num text-sm font-semibold">{usd(price)}</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-muted">Price now</div>
+            <div className="num text-lg font-semibold">{usd(price)}</div>
           </div>
         </div>
 
         {/* The bar */}
-        <div className="relative h-3">
+        <div className="relative h-4">
           <div className="flex h-full overflow-hidden rounded-full">
             <div className="bg-down/70" style={{ width: `${pos}%` }} />
             <div className="flex-1 bg-up/70" />
           </div>
           <div
-            className="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-text shadow-[0_0_0_2px_var(--panel)]"
+            className="absolute top-1/2 h-6 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-text shadow-[0_0_0_2px_var(--panel)]"
             style={{ left: `${pos}%` }}
           />
         </div>
 
         {/* Both ends */}
-        <div className="mt-3 flex justify-between gap-4">
+        <div className="mt-4 flex justify-between gap-4">
           <div>
-            <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wider text-muted">
+            <div className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted">
               If it breaks {est && <Badge kind="est" title="Uses the estimated break price" />}
             </div>
-            <div className={`num text-sm font-semibold ${est ? "text-est" : ""}`}>{usd(breakPrice)}</div>
-            <div className="num text-sm text-down">−{usd(loss)} / share</div>
+            <div className={`num text-lg font-semibold ${est ? "text-est" : ""}`}>{usd(breakPrice)}</div>
+            <div className="num text-base text-down">−{usd(loss)} / share</div>
           </div>
           <div className="text-right">
-            <div className="text-[10px] font-medium uppercase tracking-wider text-muted">If it closes</div>
-            <div className="num text-sm font-semibold">{usd(deal.offerPrice)}</div>
-            <div className="num text-sm text-up">+{usd(m.spreadDollars)} / share</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-muted">If it closes</div>
+            <div className="num text-lg font-semibold">{usd(deal.offerPrice)}</div>
+            <div className="num text-base text-up">+{usd(m.spreadDollars)} / share</div>
           </div>
         </div>
       </div>
@@ -78,16 +78,13 @@ export function PayoffLadder({ row }: { row: DealRow }) {
 
   return (
     <section className={cardClass("p-5")}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-semibold">Risk and reward</h2>
-        {m.breakEven !== null && m.downsideDollars !== null && m.spreadDollars !== null && (
-          <p className="text-xs text-muted">
-            Risk <span className="num text-down">{usd(Math.abs(m.downsideDollars))}</span> to make{" "}
-            <span className="num text-up">{usd(m.spreadDollars)}</span> per share · the market prices in{" "}
-            <span className={`num ${est ? "text-est" : "text-text"}`}>{pct(m.breakEven, "—", 1)}</span> odds of closing
-          </p>
-        )}
-      </div>
+      <h2 className="text-base font-semibold">Risk and reward</h2>
+      {m.breakEven !== null && m.downsideDollars !== null && m.spreadDollars !== null && (
+        <p className="mt-1 text-sm text-muted">
+          Risk <span className="num text-down">{usd(Math.abs(m.downsideDollars))}</span> to make{" "}
+          <span className="num text-up">{usd(m.spreadDollars)}</span> per share
+        </p>
+      )}
       <div className="mt-3">{body}</div>
     </section>
   );

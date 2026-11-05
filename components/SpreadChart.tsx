@@ -68,11 +68,9 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <div className="text-xs text-muted">
-          (Offer − close) / close, daily since announcement · Yahoo Finance daily closes
-        </div>
-        <div className="text-xs text-muted">
-          Latest <span className="num text-sm text-text">{pct(last.spreadPct)}</span> on {shortDate(last.date)}
+        <div className="text-sm text-muted">(Offer − close) / close, daily since announcement</div>
+        <div className="text-sm text-muted">
+          Latest <span className="num text-base text-text">{pct(last.spreadPct)}</span> on {shortDate(last.date)}
         </div>
       </div>
 
@@ -94,7 +92,7 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
           dataKey="date"
           tickFormatter={shortDate}
           minTickGap={40}
-          tick={{ fill: AXIS_TEXT, fontSize: 11 }}
+          tick={{ fill: AXIS_TEXT, fontSize: 12 }}
           axisLine={{ stroke: GRID }}
           tickLine={false}
         />
@@ -103,7 +101,7 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
           ticks={ticks}
           interval={0}
           tickFormatter={(v: number) => pct(v, "", digits)}
-          tick={{ fill: AXIS_TEXT, fontSize: 11 }}
+          tick={{ fill: AXIS_TEXT, fontSize: 12 }}
           axisLine={false}
           tickLine={false}
           width={52}
@@ -133,7 +131,7 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
       </AreaChart>
 
       {/* Table view: every value is reachable without hovering */}
-      <details className="group text-xs">
+      <details className="group text-sm">
         <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-muted transition-colors hover:text-text [&::-webkit-details-marker]:hidden">
           <svg aria-hidden viewBox="0 0 8 12" className="h-3 w-2 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="m2 2 4 4-4 4" />
@@ -142,7 +140,7 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
         </summary>
         <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border">
           <table className="w-full">
-            <thead className="sticky top-0 bg-panel text-[11px] uppercase tracking-wider text-muted">
+            <thead className="sticky top-0 bg-panel text-xs uppercase tracking-wider text-muted">
               <tr>
                 <th className="px-3 py-1.5 text-left font-medium">Date</th>
                 <th className="px-3 py-1.5 text-right font-medium">Close</th>
