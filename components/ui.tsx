@@ -32,20 +32,6 @@ export function buttonClass(variant: Variant = "secondary", size: Size = "sm"): 
   return `${base} ${sizes[size]} ${variants[variant]}`;
 }
 
-/** Neutral 2-letter tile for a ticker. It carries no meaning, so it's never colored by data. */
-export function Monogram({ text, large = false }: { text: string; large?: boolean }) {
-  return (
-    <span
-      aria-hidden
-      className={`grid shrink-0 place-items-center border border-border bg-panel-2 font-mono font-bold tracking-tight text-accent ${
-        large ? "h-12 w-12 rounded-xl text-sm" : "h-8 w-8 rounded-lg text-[11px]"
-      }`}
-    >
-      {text.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase()}
-    </span>
-  );
-}
-
 /** Two chevrons; the one for the active sort direction is solid, the other faded. */
 export function SortIcon({ dir }: { dir: "asc" | "desc" | null }) {
   return (

@@ -4,7 +4,7 @@ import type { RumourRow } from "@/lib/dealRow";
 import { pct, usd } from "@/lib/format";
 import type { Rumour } from "@/lib/types";
 import { Badge } from "./Badge";
-import { cardClass, Monogram, PencilIcon, TrashIcon } from "./ui";
+import { cardClass, PencilIcon, TrashIcon } from "./ui";
 
 // Rumoured deals: reported in the press, not announced. Anything the report doesn't state shows
 // "Not disclosed"; numbers computed from a reported price are amber and tagged INDICATIVE.
@@ -59,10 +59,12 @@ export function RumourTable({
   rows,
   onEdit,
   onDelete,
+  showNote = true,
 }: {
   rows: RumourRow[];
   onEdit: (rumour: Rumour) => void;
   onDelete: (rumour: Rumour) => void;
+  showNote?: boolean; // per-row "as of" time; off when the page shows one shared time
 }) {
   const sorted = byReportDate(rows);
   const th = "px-2.5 py-3 font-medium whitespace-nowrap";
@@ -102,7 +104,6 @@ export function RumourTable({
                 <tr key={r.id} className="group border-b border-border/60 transition-colors last:border-0 hover:bg-panel-2">
                   <td className="px-3 py-3.5">
                     <div className="flex items-center gap-2.5">
-                      <Monogram text={r.targetTicker} />
                       <div className="min-w-0">
                         <div className="font-mono font-semibold">{r.targetTicker}</div>
                         <div className="max-w-[10rem] truncate text-xs text-muted">{r.targetName}</div>
@@ -120,7 +121,7 @@ export function RumourTable({
                   </td>
                   <td className={td}>
                     <div className="font-medium">{usd(row.price)}</div>
-                    <div className="text-xs text-muted">{row.priceNote}</div>
+                    {showNote && <div className="text-xs text-muted">{row.priceNote}</div>}
                   </td>
                   <td className={td}>
                     {r.reportedPrice !== undefined ? (
@@ -162,7 +163,7 @@ export function RumourTable({
       {/* Phones and tablets: one card per rumour (two columns on tablets) */}
       <div className="grid gap-3 md:grid-cols-2 xl:hidden">
         {sorted.map((row) => (
-          <RumourCard key={row.rumour.id} row={row} onEdit={onEdit} onDelete={onDelete} />
+          <RumourCard key={row.rumour.id} row={row} onEdit={onEdit} onDelete={onDelete} showNote={showNote} />
         ))}
       </div>
     </>
@@ -179,14 +180,23 @@ function CardStat({ label, children, sub }: { label: React.ReactNode; children: 
   );
 }
 
-function RumourCard({ row, onEdit, onDelete }: { row: RumourRow; onEdit: (r: Rumour) => void; onDelete: (r: Rumour) => void }) {
+function RumourCard({
+  row,
+  onEdit,
+  onDelete,
+  showNote,
+}: {
+  row: RumourRow;
+  onEdit: (r: Rumour) => void;
+  onDelete: (r: Rumour) => void;
+  showNote: boolean;
+}) {
   const { rumour: r, metrics: m } = row;
 
   return (
     <div className={cardClass("flex flex-col overflow-hidden")}>
       <div className="flex-1 p-4">
         <div className="flex items-start gap-3">
-          <Monogram text={r.targetTicker} />
           <div className="min-w-0 flex-1">
             <div className="font-mono font-semibold">{r.targetTicker}</div>
             <div className="truncate text-xs text-muted">{r.targetName}</div>
@@ -205,7 +215,7 @@ function RumourCard({ row, onEdit, onDelete }: { row: RumourRow; onEdit: (r: Rum
         </div>
 
         <dl className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3 text-sm">
-          <CardStat label="Price" sub={row.priceNote}>
+          <CardStat label="Price" sub={showNote ? row.priceNote : undefined}>
             {usd(row.price)}
           </CardStat>
           <CardStat label="Reported">

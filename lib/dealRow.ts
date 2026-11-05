@@ -71,6 +71,15 @@ export function buildRumourRow(rumour: Rumour, today: string, quotes: Record<str
   };
 }
 
+/**
+ * The "as of …" note, if every priced row shares it, so it can be shown once instead of on
+ * every row. Rows without a price ("loading…", "unavailable") are ignored; null if none or mixed.
+ */
+export function sharedPriceNote(rows: { price: number | null; priceNote: string }[]): string | null {
+  const notes = new Set(rows.filter((r) => r.price !== null).map((r) => r.priceNote));
+  return notes.size === 1 ? [...notes][0] : null;
+}
+
 export type DealSummary = {
   dealCount: number; // deals tracked
   pricedCount: number; // of those, how many have a market price right now

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { DealMetrics } from "./calc";
-import { buildRumourRow, summarize, type DealRow } from "./dealRow";
+import { buildRumourRow, sharedPriceNote, summarize, type DealRow } from "./dealRow";
 import type { Quote, Rumour } from "./types";
 
 const noMetrics: DealMetrics = {
@@ -119,5 +119,23 @@ describe("buildRumourRow", () => {
     expect(buildRumourRow(rumour, "2026-11-04", {}, true).priceNote).toBe("loading…");
     expect(buildRumourRow(rumour, "2026-11-04", {}, false).priceNote).toBe("unavailable");
     expect(buildRumourRow(rumour, "2026-11-04", {}, false).metrics.spreadPct).toBeNull();
+  });
+});
+
+describe("sharedPriceNote", () => {
+  const r = (price: number | null, priceNote: string) => ({ price, priceNote });
+
+  it("returns the note when every priced row has the same one", () => {
+    expect(sharedPriceNote([r(1, "as of 4:00 PM ET"), r(2, "as of 4:00 PM ET")])).toBe("as of 4:00 PM ET");
+  });
+
+  it("ignores rows without a price", () => {
+    expect(sharedPriceNote([r(1, "as of 4:00 PM ET"), r(null, "unavailable")])).toBe("as of 4:00 PM ET");
+  });
+
+  it("returns null when the notes differ or nothing is priced", () => {
+    expect(sharedPriceNote([r(1, "as of 3:59 PM ET"), r(2, "as of 4:00 PM ET")])).toBeNull();
+    expect(sharedPriceNote([r(null, "loading…")])).toBeNull();
+    expect(sharedPriceNote([])).toBeNull();
   });
 });

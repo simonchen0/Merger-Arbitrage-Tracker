@@ -9,7 +9,7 @@ import { RumourTable } from "@/components/RumourTable";
 import { SummaryStrip } from "@/components/SummaryStrip";
 import { buttonClass, cardClass, EmptyState } from "@/components/ui";
 import { todayInNewYork } from "@/lib/calc";
-import { buildRow, buildRumourRow, summarize } from "@/lib/dealRow";
+import { buildRow, buildRumourRow, sharedPriceNote, summarize } from "@/lib/dealRow";
 import { deleteDeal, resetDeals, saveDeal, useDeals } from "@/lib/deals";
 import { deleteRumour, saveRumour, useRumours } from "@/lib/rumours";
 import type { Deal, Rumour } from "@/lib/types";
@@ -59,20 +59,22 @@ export default function Dashboard() {
   }, [deals, quotes, unaffected, loading]);
 
   const summary = useMemo(() => (rows ? summarize(rows) : null), [rows]);
+  // One "as of" time for the page, when every priced row shares it (otherwise rows keep their own).
+  const sharedNote = useMemo(() => sharedPriceNote([...(rows ?? []), ...(rumourRows ?? [])]), [rows, rumourRows]);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-baseline gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Deals</h1>
-          {rows && <span className="text-sm text-muted">{rows.length} tracked</span>}
         </div>
 
         <div className="flex items-center gap-3">
           <span className="num text-xs text-muted">
-            {market.lastUpdated
-              ? `Updated ${market.lastUpdated.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
-              : ""}
+            {sharedNote ??
+              (market.lastUpdated
+                ? `Updated ${market.lastUpdated.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`
+                : "")}
           </span>
           <button
             onClick={market.refresh}
@@ -88,7 +90,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {summary && summary.dealCount > 0 && <SummaryStrip summary={summary} loading={loading} />}
+      {summary && summary.dealCount > 0 && <SummaryStrip summary={summary} />}
 
       {market.error && (
         <p className="rounded-xl border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
@@ -115,7 +117,7 @@ export default function Dashboard() {
           Add an announced all-cash deal to track its spread, or load the starting deals to see how it works.
         </EmptyState>
       ) : (
-        <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
+        <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} showNote={sharedNote === null} />
       )}
 
       {/* Rumoured deals: kept apart from announced ones, and out of the summary strip */}
@@ -133,15 +135,12 @@ export default function Dashboard() {
               + Add rumour
             </button>
           </div>
-          <p className="text-sm text-muted">
-            Reported by the press, not announced. Terms are unconfirmed, so spreads are indicative.
-          </p>
           {rumourRows.length === 0 ? (
             <div className={cardClass("px-5 py-6 text-center text-sm text-muted")}>
-              No rumours tracked. Add one from a WSJ, Bloomberg or Reuters report.
+              No deals yet.
             </div>
           ) : (
-            <RumourTable rows={rumourRows} onEdit={setEditingRumour} onDelete={handleDeleteRumour} />
+            <RumourTable rows={rumourRows} onEdit={setEditingRumour} onDelete={handleDeleteRumour} showNote={sharedNote === null} />
           )}
         </section>
       )}

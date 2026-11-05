@@ -13,7 +13,7 @@ import { Badge } from "./Badge";
 import { DealForm } from "./DealForm";
 import { PayoffLadder } from "./PayoffLadder";
 import { SpreadChart } from "./SpreadChart";
-import { buttonClass, cardClass, EmptyState, Monogram, PencilIcon, TrashIcon } from "./ui";
+import { buttonClass, cardClass, EmptyState, PencilIcon, TrashIcon } from "./ui";
 
 export function DealDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -116,12 +116,9 @@ export function DealDetail({ id }: { id: string }) {
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <Monogram text={deal.targetTicker} large />
-          <div>
-            <h1 className="font-mono text-3xl font-semibold leading-tight">{deal.targetTicker}</h1>
-            <p className="text-muted">{deal.targetName}</p>
-          </div>
+        <div>
+          <h1 className="font-mono text-3xl font-semibold leading-tight">{deal.targetTicker}</h1>
+          <p className="text-muted">{deal.targetName}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => setEditing(true)} className={buttonClass("secondary", "md")}>
@@ -156,7 +153,7 @@ export function DealDetail({ id }: { id: string }) {
           </div>
           <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
             <Metric label="Spread" value={pct(m.spreadPct)} valueClass={signClass(m.spreadPct)} sub={`${usd(m.spreadDollars)} per share`} />
-            <Metric label="Offer" value={usd(deal.offerPrice)} sub="cash per share" />
+            <Metric label="Offer" value={usd(deal.offerPrice)} sub="per share" />
           </dl>
         </section>
 
@@ -173,7 +170,7 @@ export function DealDetail({ id }: { id: string }) {
               label="Break-even probability"
               value={breakEvenText(row)}
               valueClass={est ? "text-est" : ""}
-              sub="the deal must close at least this often"
+              sub="deal must close at least this often"
             />
             <Metric label="Price now" value={usd(row.price)} sub={row.priceNote} />
           </dl>
@@ -194,69 +191,70 @@ export function DealDetail({ id }: { id: string }) {
 
       {/* Break-price scenario and the deal's terms */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <section className={cardClass("space-y-4 p-5 lg:col-span-2")}>
+        <section className={cardClass("flex flex-col p-5 lg:col-span-2")}>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold">Break-price scenario</h2>
             {est && <Badge kind="est" title="Estimated: unaffected close before the announcement" />}
           </div>
-          <p className="text-sm text-muted">
-            Where the stock would trade if the deal fell apart. Default: the unaffected price
-            {row.unaffected !== null ? ` (${usd(row.unaffected)})` : ""}.
-          </p>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative">
-              <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                aria-label="Break price"
-                value={draft ?? (saved.breakPrice !== null ? saved.breakPrice.toFixed(2) : "")}
-                onChange={(e) => setDraft(e.target.value)}
-                className={`w-32 rounded-lg border bg-panel-2 py-1.5 pl-6 pr-2 text-sm outline-none transition-colors num [color-scheme:dark] focus:border-accent ${
-                  draftError ? "border-down" : "border-border"
-                } ${est && draft === null ? "text-est" : ""}`}
-              />
-            </div>
-            <button
-              onClick={() => saveBreak(draftValue!)}
-              disabled={!usingDraft || draftValue === deal.breakPrice}
-              className={buttonClass("primary")}
-            >
-              Save
-            </button>
-            {(deal.breakPrice !== undefined || draft !== null) && (
-              <button onClick={() => saveBreak(undefined)} className={buttonClass("secondary")}>
+          {/* The controls sit centered in whatever height the neighbouring terms card gives this one. */}
+          <div className="my-auto space-y-4 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative">
+                <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  aria-label="Break price"
+                  value={draft ?? (saved.breakPrice !== null ? saved.breakPrice.toFixed(2) : "")}
+                  onChange={(e) => setDraft(e.target.value)}
+                  className={`w-32 rounded-lg border bg-panel-2 py-1.5 pl-6 pr-2 text-sm outline-none transition-colors num [color-scheme:dark] focus:border-accent ${
+                    draftError ? "border-down" : "border-border"
+                  } ${est && draft === null ? "text-est" : ""}`}
+                />
+              </div>
+              <button
+                onClick={() => saveBreak(draftValue!)}
+                disabled={!usingDraft || draftValue === deal.breakPrice}
+                className={buttonClass("primary")}
+              >
+                Save
+              </button>
+              {/* Always laid out (hidden when there's nothing to reset), so it appearing never reflows the card. */}
+              <button
+                onClick={() => saveBreak(undefined)}
+                className={`${buttonClass("secondary")} ${deal.breakPrice !== undefined || draft !== null ? "" : "invisible"}`}
+              >
                 Reset to unaffected{row.unaffected !== null ? ` (${usd(row.unaffected)})` : ""}
               </button>
-            )}
-          </div>
+            </div>
 
-          <div>
-            <input
-              type="range"
-              aria-label="Break price slider"
-              min={range?.min ?? 0}
-              max={range?.max ?? 1}
-              step={0.01}
-              value={sliderValue}
-              disabled={!range}
-              onChange={(e) => setDraft(Number(e.target.value).toFixed(2))}
-              className="h-2 w-full cursor-pointer accent-accent disabled:cursor-not-allowed disabled:opacity-40"
-            />
-            {range && (
-              <div className="num mt-1 flex justify-between text-sm text-muted">
-                <span>{usd(range.min)}</span>
-                <span>{usd(range.max)}</span>
-              </div>
-            )}
-          </div>
+            <div>
+              <input
+                type="range"
+                aria-label="Break price slider"
+                min={range?.min ?? 0}
+                max={range?.max ?? 1}
+                step={0.01}
+                value={sliderValue}
+                disabled={!range}
+                onChange={(e) => setDraft(Number(e.target.value).toFixed(2))}
+                className="h-2 w-full cursor-pointer accent-accent disabled:cursor-not-allowed disabled:opacity-40"
+              />
+              {range && (
+                <div className="num mt-1 flex justify-between text-sm text-muted">
+                  <span>{usd(range.min)}</span>
+                  <span>{usd(range.max)}</span>
+                </div>
+              )}
+            </div>
 
-          {draftError && <p className="text-sm text-down">{draftError}</p>}
-          {usingDraft && draftValue !== deal.breakPrice && (
-            <p className="text-sm text-muted">What-if only. Save to keep it.</p>
-          )}
+            {/* Always rendered, so an error appearing or clearing never moves the controls. */}
+            <p aria-live="polite" className="min-h-5 text-sm text-down">
+              {draftError}
+            </p>
+          </div>
         </section>
 
         <section className={cardClass("p-5")}>
@@ -301,11 +299,6 @@ export function DealDetail({ id }: { id: string }) {
         </section>
       </div>
 
-      <section className={cardClass("space-y-2 p-5 text-base")}>
-        <h2 className="text-base font-semibold">The trade in one paragraph</h2>
-        <Scenario row={row} />
-      </section>
-
       {editing && (
         <DealForm
           deal={deal}
@@ -324,52 +317,6 @@ export function DealDetail({ id }: { id: string }) {
 function breakEvenText(row: DealRow): string {
   if (row.metrics.breakEven !== null) return pct(row.metrics.breakEven, "—", 1);
   return row.price === null || row.breakPrice === null ? "—" : "n/a";
-}
-
-function Scenario({ row }: { row: DealRow }) {
-  const { deal, price, breakPrice, metrics: m } = row;
-  if (price === null) return <p className="text-muted">Waiting for a market price.</p>;
-
-  return (
-    <div className="space-y-2 leading-relaxed text-muted">
-      <p>
-        Buying {deal.targetTicker} at <span className="num text-text">{usd(price)}</span>{" "}
-        {m.spreadDollars !== null && m.spreadDollars >= 0 ? (
-          <>
-            earns <span className="num text-up">{usd(m.spreadDollars)}</span> per share (
-            <span className="num text-up">{pct(m.spreadPct)}</span>) if the deal closes at{" "}
-            <span className="num text-text">{usd(deal.offerPrice)}</span>
-            {m.annualized !== null && (
-              <>
-                , or <span className="num text-up">{pct(m.annualized)}</span> annualized over {m.daysToClose} days
-              </>
-            )}
-            .
-          </>
-        ) : (
-          <>
-            costs more than the <span className="num text-text">{usd(deal.offerPrice)}</span> offer, so it loses{" "}
-            <span className="num text-down">{m.spreadDollars === null ? "—" : usd(Math.abs(m.spreadDollars))}</span> per share if the deal closes on current terms.
-            The market is pricing in a higher bid.
-          </>
-        )}
-      </p>
-      {breakPrice !== null && m.downsideDollars !== null && (
-        <p>
-          If the deal breaks and the stock falls to{" "}
-          <span className={`num ${row.breakIsEstimate ? "text-est" : "text-text"}`}>{usd(breakPrice)}</span>, the loss
-          is <span className="num text-down">{usd(Math.abs(m.downsideDollars))}</span> per share (
-          <span className="num text-down">{pct(m.downside)}</span>).
-        </p>
-      )}
-      {m.breakEven !== null && (
-        <p>
-          The trade breaks even if the deal closes with probability{" "}
-          <span className="num text-text">{pct(m.breakEven, "—", 1)}</span>, which is what the market is implying.
-        </p>
-      )}
-    </div>
-  );
 }
 
 function Chip({ children, tone = "" }: { children: React.ReactNode; tone?: string }) {

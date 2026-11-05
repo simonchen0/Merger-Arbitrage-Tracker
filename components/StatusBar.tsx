@@ -23,14 +23,13 @@ export function StatusBar() {
         </span>
 
         <span className="hidden shrink-0 items-center gap-2 md:flex">
-          <Badge kind="est" /> uses the estimated break price
+          <Badge kind="est" /> estimated break price
         </span>
         {hasRumours && (
           <span className="hidden shrink-0 items-center gap-2 lg:flex">
-            <Badge kind="ind" /> based on unconfirmed reported terms
+            <Badge kind="ind" /> unconfirmed reported terms
           </span>
         )}
-        <span className="hidden shrink-0 xl:inline">Ann. return = spread % × 365 / days to close</span>
 
         <button onClick={handleReset} className="ml-auto shrink-0 transition-colors hover:text-text">
           Reset to the starting deals

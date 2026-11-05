@@ -6,7 +6,7 @@ import { useState } from "react";
 import type { DealRow } from "@/lib/dealRow";
 import { pct, signClass, usd } from "@/lib/format";
 import type { Deal } from "@/lib/types";
-import { buttonClass, cardClass, Monogram, PencilIcon, SortIcon, TrashIcon } from "./ui";
+import { buttonClass, cardClass, PencilIcon, SortIcon, TrashIcon } from "./ui";
 
 type SortKey =
   | "target"
@@ -101,10 +101,12 @@ export function DealTable({
   rows,
   onEdit,
   onDelete,
+  showNote = true,
 }: {
   rows: DealRow[];
   onEdit: (deal: Deal) => void;
   onDelete: (deal: Deal) => void;
+  showNote?: boolean; // per-row "as of" time; off when the page shows one shared time
 }) {
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "annualized", dir: "desc" });
   const router = useRouter();
@@ -166,7 +168,6 @@ export function DealTable({
                 >
                   <td className="sticky left-0 z-10 bg-panel px-3 py-3.5 transition-colors before:absolute before:inset-y-0 before:left-0 before:w-0.5 before:bg-accent before:opacity-0 before:transition-opacity group-hover:bg-panel-2 group-hover:before:opacity-100">
                     <div className="flex items-center gap-2.5">
-                      <Monogram text={deal.targetTicker} />
                       <div className="min-w-0">
                         <Link
                           href={`/deals/${deal.id}`}
@@ -186,7 +187,7 @@ export function DealTable({
                   </td>
                   <td className={td}>
                     <div className="font-medium">{usd(row.price)}</div>
-                    <div className="text-xs text-muted">{row.priceNote}</div>
+                    {showNote && <div className="text-xs text-muted">{row.priceNote}</div>}
                   </td>
                   <td className={`${td} font-medium`}>{usd(deal.offerPrice)}</td>
                   <td className={`${td} ${signClass(m.spreadDollars)}`}>{usd(m.spreadDollars)}</td>
@@ -271,7 +272,7 @@ export function DealTable({
 
         <div className="grid gap-3 md:grid-cols-2">
           {sorted.map((row) => (
-            <DealCard key={row.deal.id} row={row} onEdit={onEdit} onDelete={onDelete} />
+            <DealCard key={row.deal.id} row={row} onEdit={onEdit} onDelete={onDelete} showNote={showNote} />
           ))}
         </div>
       </div>
@@ -289,7 +290,17 @@ function CardStat({ label, children, sub, className = "" }: { label: string; chi
   );
 }
 
-function DealCard({ row, onEdit, onDelete }: { row: DealRow; onEdit: (deal: Deal) => void; onDelete: (deal: Deal) => void }) {
+function DealCard({
+  row,
+  onEdit,
+  onDelete,
+  showNote,
+}: {
+  row: DealRow;
+  onEdit: (deal: Deal) => void;
+  onDelete: (deal: Deal) => void;
+  showNote: boolean;
+}) {
   const { deal, metrics: m } = row;
   const est = row.breakIsEstimate;
 
@@ -297,7 +308,6 @@ function DealCard({ row, onEdit, onDelete }: { row: DealRow; onEdit: (deal: Deal
     <div className={cardClass("flex flex-col overflow-hidden")}>
       <Link href={`/deals/${deal.id}`} className="block flex-1 p-4 transition-colors active:bg-panel-2">
         <div className="flex items-start gap-3">
-          <Monogram text={deal.targetTicker} />
           <div className="min-w-0 flex-1">
             <div className="font-mono font-semibold">{deal.targetTicker}</div>
             <div className="truncate text-xs text-muted">{deal.targetName}</div>
@@ -310,7 +320,7 @@ function DealCard({ row, onEdit, onDelete }: { row: DealRow; onEdit: (deal: Deal
         </div>
 
         <dl className="mt-4 grid grid-cols-3 gap-x-3 gap-y-3 text-sm">
-          <CardStat label="Price" sub={row.priceNote}>
+          <CardStat label="Price" sub={showNote ? row.priceNote : undefined}>
             {usd(row.price)}
           </CardStat>
           <CardStat label="Offer">{usd(deal.offerPrice)}</CardStat>
