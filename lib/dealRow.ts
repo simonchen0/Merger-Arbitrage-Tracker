@@ -1,8 +1,9 @@
 // Combines a deal with its market data into everything the UI displays.
 // Used by both the dashboard table and the deal detail page.
-import { computeMetrics, median, type DealMetrics } from "./calc";
+import { computeMetrics, indicativeMetrics, median, type DealMetrics, type IndicativeMetrics } from "./calc";
 import { asOfLabel } from "./format";
-import type { Deal, Quote } from "./types";
+import { publisherFor } from "./sources";
+import type { Deal, Quote, Rumour } from "./types";
 import { unaffectedKey } from "./useMarketData";
 
 export type DealRow = {
@@ -40,6 +41,31 @@ export function buildRow(
       offer: deal.offerPrice,
       breakPrice,
       expectedCloseDate: deal.expectedCloseDate,
+      today,
+    }),
+  };
+}
+
+export type RumourRow = {
+  rumour: Rumour;
+  publisher: string | null; // from the source link; null only for a link saved before validation
+  price: number | null;
+  priceNote: string;
+  metrics: IndicativeMetrics; // from reported (unconfirmed) terms: always shown as indicative
+};
+
+export function buildRumourRow(rumour: Rumour, today: string, quotes: Record<string, Quote>, loading: boolean): RumourRow {
+  const quote = quotes[rumour.targetTicker];
+  const price = quote?.price ?? null;
+  return {
+    rumour,
+    publisher: publisherFor(rumour.sourceUrl),
+    price,
+    priceNote: quote ? asOfLabel(quote.asOf) : loading ? "loading…" : "unavailable",
+    metrics: indicativeMetrics({
+      price,
+      reportedPrice: rumour.reportedPrice,
+      reportedCloseDate: rumour.reportedCloseDate,
       today,
     }),
   };

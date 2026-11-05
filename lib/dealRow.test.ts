@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DealMetrics } from "./calc";
-import { summarize, type DealRow } from "./dealRow";
+import { buildRumourRow, summarize, type DealRow } from "./dealRow";
+import type { Quote, Rumour } from "./types";
 
 const noMetrics: DealMetrics = {
   daysToClose: 100,
@@ -92,5 +93,31 @@ describe("summarize", () => {
       medianBreakEven: null,
       breakEvenIsEstimate: false,
     });
+  });
+});
+
+describe("buildRumourRow", () => {
+  const rumour: Rumour = {
+    id: "r-1",
+    targetTicker: "ABC",
+    targetName: "ABC Corp",
+    sourceUrl: "https://www.bloomberg.com/news/articles/2026-10-30/x",
+    reportDate: "2026-10-30",
+    reportedPrice: 50,
+  };
+  const quotes: Record<string, Quote> = { ABC: { symbol: "ABC", name: "ABC Corp", price: 48, asOf: "2026-11-04T21:00:00Z" } };
+
+  it("derives the publisher from the link and computes the indicative spread", () => {
+    const r = buildRumourRow(rumour, "2026-11-04", quotes, false);
+    expect(r.publisher).toBe("Bloomberg");
+    expect(r.price).toBe(48);
+    expect(r.metrics.spreadPct).toBeCloseTo(0.041667, 6);
+    expect(r.metrics.annualized).toBeNull(); // no reported timeframe
+  });
+
+  it("says why there's no price", () => {
+    expect(buildRumourRow(rumour, "2026-11-04", {}, true).priceNote).toBe("loading…");
+    expect(buildRumourRow(rumour, "2026-11-04", {}, false).priceNote).toBe("unavailable");
+    expect(buildRumourRow(rumour, "2026-11-04", {}, false).metrics.spreadPct).toBeNull();
   });
 });

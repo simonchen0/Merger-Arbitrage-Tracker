@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateDeal, type Fields } from "./validate";
+import { validateDeal, validateRumour, type Fields, type RumourFields } from "./validate";
 
 const TODAY = "2026-11-04";
 
@@ -88,5 +88,61 @@ describe("validateDeal", () => {
     expect(errorsFor({ sourceUrl: "notaurl" }).sourceUrl).toBeDefined();
     expect(errorsFor({ sourceUrl: "ftp://example.com/x" }).sourceUrl).toBeDefined();
     expect(errorsFor({ sourceUrl: "http://example.com/x" }).sourceUrl).toBeUndefined();
+  });
+});
+
+const validRumour: RumourFields = {
+  targetTicker: "abc",
+  targetName: "ABC Corp",
+  acquirerName: "",
+  sourceUrl: "https://www.reuters.com/markets/deals/abc-2026-10-30/",
+  reportDate: "2026-10-30",
+  reportedPrice: "",
+  reportedCloseDate: "",
+};
+
+const rumourErrorsFor = (changes: Partial<RumourFields>) => validateRumour({ ...validRumour, ...changes }, TODAY);
+
+describe("validateRumour", () => {
+  it("accepts a rumour with only the target, a trusted source and the report date", () => {
+    expect(rumourErrorsFor({})).toEqual({});
+  });
+
+  it("accepts all optional fields when valid", () => {
+    expect(rumourErrorsFor({ acquirerName: "Buyer", reportedPrice: "50", reportedCloseDate: "2027-06-30" })).toEqual({});
+  });
+
+  it("requires a ticker and a company name", () => {
+    expect(rumourErrorsFor({ targetTicker: "" }).targetTicker).toBeDefined();
+    expect(rumourErrorsFor({ targetTicker: "A B" }).targetTicker).toBeDefined();
+    expect(rumourErrorsFor({ targetName: "  " }).targetName).toBeDefined();
+  });
+
+  it("requires a source link from a trusted publisher", () => {
+    expect(rumourErrorsFor({ sourceUrl: "" }).sourceUrl).toMatch(/Required/);
+    expect(rumourErrorsFor({ sourceUrl: "https://www.example.com/x" }).sourceUrl).toMatch(/Reuters/);
+    expect(rumourErrorsFor({ sourceUrl: "https://finance.yahoo.com/news/x.html" }).sourceUrl).toBeDefined();
+    expect(rumourErrorsFor({ sourceUrl: "https://reuters.com.evil.io/x" }).sourceUrl).toBeDefined();
+    expect(rumourErrorsFor({ sourceUrl: "https://www.wsj.com/business/deals/x" }).sourceUrl).toBeUndefined();
+  });
+
+  it("requires a valid report date that isn't in the future", () => {
+    expect(rumourErrorsFor({ reportDate: "" }).reportDate).toBeDefined();
+    expect(rumourErrorsFor({ reportDate: "2026-02-30" }).reportDate).toBeDefined();
+    expect(rumourErrorsFor({ reportDate: "2026-11-05" }).reportDate).toBeDefined();
+    expect(rumourErrorsFor({ reportDate: TODAY }).reportDate).toBeUndefined();
+  });
+
+  it("requires the reported price, when given, to be above 0", () => {
+    expect(rumourErrorsFor({ reportedPrice: "0" }).reportedPrice).toBeDefined();
+    expect(rumourErrorsFor({ reportedPrice: "-5" }).reportedPrice).toBeDefined();
+    expect(rumourErrorsFor({ reportedPrice: "abc" }).reportedPrice).toBeDefined();
+    expect(rumourErrorsFor({ reportedPrice: "49.5" }).reportedPrice).toBeUndefined();
+  });
+
+  it("requires the reported close date, when given, to be valid and after the report", () => {
+    expect(rumourErrorsFor({ reportedCloseDate: "soon" }).reportedCloseDate).toBeDefined();
+    expect(rumourErrorsFor({ reportedCloseDate: "2026-10-30" }).reportedCloseDate).toBeDefined();
+    expect(rumourErrorsFor({ reportedCloseDate: "2026-10-31" }).reportedCloseDate).toBeUndefined();
   });
 });

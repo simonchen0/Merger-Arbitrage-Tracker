@@ -6,6 +6,7 @@ import {
   computeMetrics,
   daysBetween,
   downside,
+  indicativeMetrics,
   isValidDate,
   median,
   spread,
@@ -390,6 +391,52 @@ describe("computeMetrics", () => {
       today: "2026-02-01",
     });
     expect(m.daysToClose).toBe(-31);
+    expect(m.annualized).toBeNull();
+  });
+});
+
+describe("indicativeMetrics (rumoured deals)", () => {
+  const today = "2026-11-04";
+  const in120 = "2027-03-04"; // 2026-11-04 + 120 days (Nov 26 + Dec 31 + Jan 31 + Feb 28 + Mar 4)
+
+  it("matches the reference case when a price and timeframe are reported", () => {
+    const m = indicativeMetrics({ price: P, reportedPrice: O, reportedCloseDate: in120, today });
+    expect(m.daysToClose).toBe(120);
+    expect(m.spreadDollars).toBeCloseTo(2, 10);
+    expect(m.spreadPct).toBeCloseTo(0.041667, 6);
+    expect(m.annualized).toBeCloseTo(0.126736, 6);
+  });
+
+  it("shows the spread but no annualized return without a reported timeframe", () => {
+    const m = indicativeMetrics({ price: P, reportedPrice: O, today });
+    expect(m.spreadPct).toBeCloseTo(0.041667, 6);
+    expect(m.daysToClose).toBeNull();
+    expect(m.annualized).toBeNull();
+  });
+
+  it("computes nothing without a reported price, even with a timeframe", () => {
+    expect(indicativeMetrics({ price: P, reportedCloseDate: in120, today })).toEqual({
+      daysToClose: 120,
+      spreadDollars: null,
+      spreadPct: null,
+      annualized: null,
+    });
+  });
+
+  it("computes nothing without a market price", () => {
+    const m = indicativeMetrics({ price: null, reportedPrice: O, reportedCloseDate: in120, today });
+    expect([m.spreadDollars, m.spreadPct, m.annualized]).toEqual([null, null, null]);
+  });
+
+  it("keeps a negative spread when the target trades above the reported price", () => {
+    const m = indicativeMetrics({ price: 52, reportedPrice: O, today });
+    expect(m.spreadDollars).toBeCloseTo(-2, 10);
+    expect(m.spreadPct).toBeCloseTo(-0.038462, 6);
+  });
+
+  it("drops annualized once the reported timeframe has passed", () => {
+    const m = indicativeMetrics({ price: P, reportedPrice: O, reportedCloseDate: today, today });
+    expect(m.daysToClose).toBe(0);
     expect(m.annualized).toBeNull();
   });
 });

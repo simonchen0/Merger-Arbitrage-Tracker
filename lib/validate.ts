@@ -1,5 +1,6 @@
 // Validation for the add/edit deal form. Pure functions, so they can be tested without React.
 import { isValidDate } from "./calc";
+import { publisherFor, TRUSTED_PUBLISHER_NAMES } from "./sources";
 
 /** Form values as typed: everything is a string until the form is submitted. */
 export type Fields = {
@@ -48,5 +49,46 @@ export function validateDeal(f: Fields, today: string): Errors {
   }
 
   if (f.sourceUrl.trim() && !/^https?:\/\/\S+$/i.test(f.sourceUrl.trim())) e.sourceUrl = "Enter a full http(s) link";
+  return e;
+}
+
+/** Add/edit rumour form values, as typed. */
+export type RumourFields = {
+  targetTicker: string;
+  targetName: string;
+  acquirerName: string;
+  sourceUrl: string;
+  reportDate: string;
+  reportedPrice: string;
+  reportedCloseDate: string;
+};
+export type RumourErrors = Partial<Record<keyof RumourFields, string>>;
+
+/**
+ * Returns an error message per invalid field (empty object = valid). Only the target, a trusted
+ * source link and the report date are required: terms a report doesn't state stay blank.
+ */
+export function validateRumour(f: RumourFields, today: string): RumourErrors {
+  const e: RumourErrors = {};
+
+  if (!SYMBOL_RE.test(f.targetTicker.trim().toUpperCase())) e.targetTicker = "Enter a ticker, e.g. ABC";
+  if (!f.targetName.trim()) e.targetName = "Required";
+
+  if (!f.sourceUrl.trim()) e.sourceUrl = "Required: a link to the original report";
+  else if (!publisherFor(f.sourceUrl)) e.sourceUrl = `Use a link from ${TRUSTED_PUBLISHER_NAMES}`;
+
+  if (!isValidDate(f.reportDate)) e.reportDate = "Enter a valid date";
+  else if (f.reportDate > today) e.reportDate = "Report date can't be in the future";
+
+  if (f.reportedPrice.trim()) {
+    const p = Number(f.reportedPrice);
+    if (!Number.isFinite(p) || p <= 0) e.reportedPrice = "Enter a price above 0, or leave blank";
+  }
+
+  if (f.reportedCloseDate.trim()) {
+    if (!isValidDate(f.reportedCloseDate)) e.reportedCloseDate = "Enter a valid date, or leave blank";
+    else if (isValidDate(f.reportDate) && f.reportedCloseDate <= f.reportDate)
+      e.reportedCloseDate = "Must be after the report date";
+  }
   return e;
 }

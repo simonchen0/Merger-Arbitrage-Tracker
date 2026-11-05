@@ -186,3 +186,35 @@ export function computeMetrics(input: {
     breakEven: hasBreak ? breakEvenProbability(price, offer, breakPrice) : null,
   };
 }
+
+export type IndicativeMetrics = {
+  daysToClose: number | null;
+  spreadDollars: number | null;
+  spreadPct: number | null;
+  annualized: number | null;
+};
+
+/**
+ * Metrics for a rumoured deal, from a price reported in the press (not agreed terms), so they are
+ * indicative only. No reported price → all null. Annualized only when the report gives a closing
+ * timeframe; it's never assumed. No downside or break-even: a rumour has no agreed terms.
+ */
+export function indicativeMetrics(input: {
+  price: number | null;
+  reportedPrice?: number;
+  reportedCloseDate?: string;
+  today: string;
+}): IndicativeMetrics {
+  const { price, reportedPrice, reportedCloseDate, today } = input;
+  const daysToClose = reportedCloseDate ? daysBetween(today, reportedCloseDate) : null;
+  if (price === null || reportedPrice === undefined) {
+    return { daysToClose, spreadDollars: null, spreadPct: null, annualized: null };
+  }
+  const s = spread(price, reportedPrice);
+  return {
+    daysToClose,
+    spreadDollars: s?.dollars ?? null,
+    spreadPct: s?.pct ?? null,
+    annualized: daysToClose === null ? null : annualizedReturn(price, reportedPrice, daysToClose),
+  };
+}
