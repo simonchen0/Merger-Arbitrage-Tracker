@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { todayInNewYork } from "@/lib/calc";
 import { usd } from "@/lib/format";
+import { isSharedTicker } from "@/lib/rumours";
 import { isKnownPublisher, publisherFor } from "@/lib/sources";
 import type { Rumour } from "@/lib/types";
 import { SYMBOL_RE, validateRumour, type RumourErrors, type RumourFields } from "@/lib/validate";
@@ -67,6 +68,13 @@ export function RumourForm({
     const found = validateRumour(fields, todayInNewYork());
     setErrors(found);
     if (Object.keys(found).length) return;
+
+    // A shared rumour for the same company is always shown instead of a visitor's own, so a new row
+    // would silently never appear.
+    if (!rumour && isSharedTicker(fields.targetTicker.trim())) {
+      setErrors({ targetTicker: `${fields.targetTicker.trim().toUpperCase()} is already tracked` });
+      return;
+    }
 
     setSaving(true);
     const result = await checkTicker();

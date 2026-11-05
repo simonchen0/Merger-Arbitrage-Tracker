@@ -51,19 +51,33 @@ export function dropStale(rumours: Rumour[], today: string): Rumour[] {
 }
 
 // What the headline scan remembers between visits: when it last ran, and which tickers the user
-// deleted so the scan doesn't add them back.
+// deleted so the scan doesn't add them back. A dismissal lapses after DISMISS_DAYS: by then the
+// headline that triggered it is too old to be picked up again, and a new story about the same
+// company deserves to show.
 const SCAN_KEY = "merger-arb-rumour-scan-v1";
-export type ScanState = { lastScan: number; dismissed: string[] };
+export const DISMISS_DAYS = 30;
+export type Dismissal = { ticker: string; at: number };
+export type ScanState = { lastScan: number; dismissed: Dismissal[] };
 
-export function parseScanState(raw: string | null): ScanState {
+export function parseScanState(raw: string | null, now: number = Date.now()): ScanState {
+  const fresh: ScanState = { lastScan: 0, dismissed: [] };
   try {
     const p = raw ? JSON.parse(raw) : null;
-    return {
-      lastScan: p && Number.isFinite(p.lastScan) ? p.lastScan : 0,
-      dismissed: p && Array.isArray(p.dismissed) ? p.dismissed.filter((s: unknown) => typeof s === "string") : [],
-    };
+    if (!p || typeof p !== "object") return fresh;
+    const dismissed: Dismissal[] = [];
+    for (const d of Array.isArray(p.dismissed) ? p.dismissed : []) {
+      // Older versions stored bare ticker strings; treat those as dismissed just now.
+      const entry =
+        typeof d === "string"
+          ? { ticker: d, at: now }
+          : d && typeof d.ticker === "string" && Number.isFinite(d.at)
+            ? { ticker: d.ticker, at: d.at as number }
+            : null;
+      if (entry && now - entry.at <= DISMISS_DAYS * 86_400_000) dismissed.push(entry);
+    }
+    return { lastScan: Number.isFinite(p.lastScan) ? p.lastScan : 0, dismissed };
   } catch {
-    return { lastScan: 0, dismissed: [] };
+    return fresh;
   }
 }
 
@@ -81,6 +95,17 @@ export function writeScanState(state: ScanState): void {
   } catch {
     // Storage blocked: the scan just runs again next visit.
   }
+}
+
+/** The state with `ticker` dismissed as of `now` (replacing any earlier dismissal of it). */
+export function withDismissed(state: ScanState, ticker: string, now: number = Date.now()): ScanState {
+  const t = ticker.toUpperCase();
+  return { ...state, dismissed: [...state.dismissed.filter((d) => d.ticker.toUpperCase() !== t), { ticker: t, at: now }] };
+}
+
+/** True if a rumour for this ticker ships with the site (a visitor's own row for it would stay hidden). */
+export function isSharedTicker(ticker: string, shared: Rumour[] = SHARED_RUMOURS): boolean {
+  return shared.some((r) => r.targetTicker.toUpperCase() === ticker.toUpperCase());
 }
 
 /** The saved rumours (invalid entries dropped), or an empty list if none or unreadable. */
@@ -133,14 +158,14 @@ export function getRumourList(): Rumour[] {
   return mergeShared(getRumours());
 }
 
-/** Deleting an auto-found rumour also dismisses its ticker, so the next scan doesn't add it back. */
+/**
+ * Deleting a rumour also dismisses its ticker for a while, so the next scan doesn't add it back
+ * (this covers an auto-found row the user has since edited, as well as one added by hand).
+ */
 export function deleteRumour(id: string): void {
   const list = getRumours();
   const gone = list.find((r) => r.id === id);
-  if (gone?.autoFound) {
-    const state = readScanState();
-    writeScanState({ ...state, dismissed: [...new Set([...state.dismissed, gone.targetTicker.toUpperCase()])] });
-  }
+  if (gone) writeScanState(withDismissed(readScanState(), gone.targetTicker));
   setRumours(list.filter((r) => r.id !== id));
 }
 

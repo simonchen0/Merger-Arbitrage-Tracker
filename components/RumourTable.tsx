@@ -42,6 +42,8 @@ function Indicative({ value, row, needsTimeframe = false }: { value: number | nu
 }
 
 function Source({ row }: { row: RumourRow }) {
+  // A link that isn't plain http(s) (from damaged or hand-edited storage) is shown as text, not linked.
+  if (row.publisher === null) return <span className="text-muted">Source unavailable</span>;
   return (
     <a
       href={row.rumour.sourceUrl}
@@ -49,7 +51,7 @@ function Source({ row }: { row: RumourRow }) {
       rel="noopener noreferrer"
       className="text-accent transition-colors hover:underline"
     >
-      {row.publisher ?? "Source"} ↗
+      {row.publisher} ↗
     </a>
   );
 }

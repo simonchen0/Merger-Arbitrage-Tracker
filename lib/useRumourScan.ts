@@ -20,14 +20,15 @@ export function useRumourScan(ready: boolean, announcedTickers: string[]) {
     inFlight = true;
     setScanning(true);
     try {
-      const res = await fetch("/api/rumours/scan");
+      // A timeout, so a hung request can't leave the button on "Scanning…" for good.
+      const res = await fetch("/api/rumours/scan", { signal: AbortSignal.timeout(25_000) });
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "News search unavailable");
 
       const added = newRumoursFromScan(body.candidates as ScanCandidate[], {
         tracked: getRumourList().map((r) => r.targetTicker),
         announced: announcedKey ? announcedKey.split(",") : [],
-        dismissed: readScanState().dismissed,
+        dismissed: readScanState().dismissed.map((d) => d.ticker),
       });
       saveRumours(added);
       // Read the state again: a delete during the fetch may have added to the dismissed list.

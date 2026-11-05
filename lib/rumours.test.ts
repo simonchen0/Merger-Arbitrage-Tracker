@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import seedRumours from "@/data/seed-rumours.json";
-import { dropStale, isRumour, mergeShared, parseScanState, readStoredRumours } from "./rumours";
+import { dropStale, isRumour, isSharedTicker, mergeShared, parseScanState, readStoredRumours, withDismissed } from "./rumours";
 import { validateRumour } from "./validate";
 import type { Rumour } from "./types";
 
@@ -107,23 +107,56 @@ describe("auto-found rumours", () => {
 });
 
 describe("parseScanState", () => {
+  const NOW = Date.parse("2026-11-05T17:00:00Z");
+  const DAY = 86_400_000;
+
   it("reads a saved state", () => {
-    expect(parseScanState(JSON.stringify({ lastScan: 1700000000000, dismissed: ["WEN", "GFL"] }))).toEqual({
-      lastScan: 1700000000000,
-      dismissed: ["WEN", "GFL"],
-    });
+    const dismissed = [{ ticker: "WEN", at: NOW - 2 * DAY }, { ticker: "GFL", at: NOW - 5 * DAY }];
+    expect(parseScanState(JSON.stringify({ lastScan: 1700000000000, dismissed }), NOW)).toEqual({ lastScan: 1700000000000, dismissed });
   });
 
   it("starts fresh for missing, corrupt or wrong-shaped data", () => {
     const fresh = { lastScan: 0, dismissed: [] };
-    expect(parseScanState(null)).toEqual(fresh);
-    expect(parseScanState("{nope")).toEqual(fresh);
-    expect(parseScanState(JSON.stringify([1, 2]))).toEqual(fresh);
-    expect(parseScanState(JSON.stringify({ lastScan: "x", dismissed: "WEN" }))).toEqual(fresh);
+    expect(parseScanState(null, NOW)).toEqual(fresh);
+    expect(parseScanState("{nope", NOW)).toEqual(fresh);
+    expect(parseScanState(JSON.stringify([1, 2]), NOW)).toEqual(fresh);
+    expect(parseScanState(JSON.stringify({ lastScan: "x", dismissed: "WEN" }), NOW)).toEqual(fresh);
   });
 
-  it("keeps only string tickers", () => {
-    expect(parseScanState(JSON.stringify({ lastScan: 1, dismissed: ["WEN", 5, null] })).dismissed).toEqual(["WEN"]);
+  it("lets a dismissal lapse after 30 days, so a new story about the company can show", () => {
+    const state = parseScanState(
+      JSON.stringify({ lastScan: 1, dismissed: [{ ticker: "OLD", at: NOW - 31 * DAY }, { ticker: "EDGE", at: NOW - 30 * DAY }] }),
+      NOW,
+    );
+    expect(state.dismissed.map((d) => d.ticker)).toEqual(["EDGE"]);
+  });
+
+  it("accepts the older format of bare ticker strings, dismissed as of now, and drops junk entries", () => {
+    const state = parseScanState(JSON.stringify({ lastScan: 1, dismissed: ["WEN", 5, null, { ticker: "X" }, { at: 1 }] }), NOW);
+    expect(state.dismissed).toEqual([{ ticker: "WEN", at: NOW }]);
+  });
+});
+
+describe("withDismissed", () => {
+  it("adds a ticker in upper case, and refreshes the date if it was already dismissed", () => {
+    const first = withDismissed({ lastScan: 5, dismissed: [] }, "wen", 100);
+    expect(first).toEqual({ lastScan: 5, dismissed: [{ ticker: "WEN", at: 100 }] });
+    expect(withDismissed(first, "WEN", 200).dismissed).toEqual([{ ticker: "WEN", at: 200 }]);
+  });
+
+  it("keeps other dismissals and doesn't change the original", () => {
+    const base = { lastScan: 0, dismissed: [{ ticker: "GFL", at: 1 }] };
+    expect(withDismissed(base, "WEN", 2).dismissed.map((d) => d.ticker)).toEqual(["GFL", "WEN"]);
+    expect(base.dismissed).toHaveLength(1);
+  });
+});
+
+describe("isSharedTicker", () => {
+  const shared: Rumour[] = [{ ...minimal, id: "shared-ABC", targetTicker: "ABC" }];
+  it("matches a shared ticker in any case", () => {
+    expect(isSharedTicker("abc", shared)).toBe(true);
+    expect(isSharedTicker("XYZ", shared)).toBe(false);
+    expect(isSharedTicker("ABC", [])).toBe(false);
   });
 });
 

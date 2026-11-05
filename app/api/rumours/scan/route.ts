@@ -4,6 +4,7 @@
 // USD-listed company (see lib/rumourScan.ts). Headlines only, so no deal terms. The caller drops
 // tickers it already tracks. Cached briefly on the server so many visitors share one scan.
 import { cacheLife } from "next/cache";
+import { connection } from "next/server";
 import YahooFinance from "yahoo-finance2";
 import { pickCandidates, type NewsItem, type ScanCandidate } from "@/lib/rumourScan";
 
@@ -54,6 +55,9 @@ async function scan(): Promise<ScanCandidate[]> {
 }
 
 export async function GET() {
+  // Wait for a real request. Without this the route is prerendered at build time, which bakes
+  // the build's headlines (or a Yahoo error) into the deployment. scan() still caches for 15 min.
+  await connection();
   try {
     return Response.json({ candidates: await scan() });
   } catch (err) {

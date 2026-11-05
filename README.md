@@ -88,7 +88,7 @@ Below the announced deals is a separate section for rumoured deals: potential ac
 | Row | How it gets there | Label |
 |---|---|---|
 | Shared | Added by Claude on request, after reading a source (any site, filings included), with terms only if the text states them. Ships with the site as `data/seed-rumours.json`, read-only. | none (checked) |
-| Auto-found | A headline scan of Yahoo's news search runs when the dashboard opens and on the **Scan for rumours** button. It adds open takeover-talk headlines about one US-listed company, with no terms. Expires after 30 days; deleting one stops it coming back. | **AUTO-FOUND** |
+| Auto-found | A headline scan of Yahoo's news search runs when the dashboard opens and on the **Scan for rumours** button. It adds open takeover-talk headlines about one US-listed company, with no terms. Expires after 30 days. Deleting a rumour (of any kind) stops the scan re-adding that company for 30 days. | **AUTO-FOUND** |
 | Your own | The **+ Add rumour** form. | none |
 
 Auto-found rows are unverified: the scan reads headlines only. Open the source, and edit the row to confirm it.
