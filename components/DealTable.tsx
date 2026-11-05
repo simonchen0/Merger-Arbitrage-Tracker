@@ -117,7 +117,7 @@ export function DealTable({
   return (
     // `relative` keeps the sr-only header cell inside this scroll box; otherwise it
     // escapes the clipping and makes the whole page scroll sideways on phones.
-    <div className="relative overflow-x-auto rounded border border-border bg-panel">
+    <div className="relative overflow-x-auto rounded-2xl border border-border bg-panel">
       <table className="w-full min-w-[760px] text-sm md:min-w-[1000px]">
         <thead className="border-b border-border text-xs uppercase tracking-wide text-muted">
           <tr>

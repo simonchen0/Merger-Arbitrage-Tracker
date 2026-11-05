@@ -108,6 +108,19 @@ export function unaffectedPrice(
   return before.length ? before[before.length - 1].close : null;
 }
 
+/**
+ * Makes sure the history ends with the latest quote. Yahoo's daily bar for today can have an
+ * empty close after hours, which would leave the chart a day behind the headline numbers.
+ * The quote fills that day only when history has no real close for it; older quotes and bad
+ * prices are ignored. Returns a new array.
+ */
+export function withLatestQuote(history: PricePoint[], quoteDate: string, price: number): PricePoint[] {
+  if (!isPositive(price)) return history;
+  const newest = validSorted(history).at(-1);
+  if (newest && newest.date >= quoteDate) return history; // already has a real close for that day or later
+  return [...history.filter((p) => p.date !== quoteDate), { date: quoteDate, close: price }];
+}
+
 export type SpreadPoint = { date: string; close: number; spreadPct: number };
 
 /** Daily spread % ((O − close) / close) from the announcement date onward, sorted by date. */

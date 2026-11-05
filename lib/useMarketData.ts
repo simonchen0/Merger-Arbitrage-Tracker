@@ -45,6 +45,11 @@ export function unaffectedKey(deal: Deal): string {
   return `${deal.targetTicker}|${deal.announceDate}|${deal.unaffectedDate ?? ""}`;
 }
 
+export function parseUnaffectedKey(key: string): { ticker: string; announceDate: string; unaffectedDate?: string } {
+  const [ticker, announceDate, unaffectedDate] = key.split("|");
+  return { ticker, announceDate, unaffectedDate: unaffectedDate || undefined };
+}
+
 export function useMarketData(deals: Deal[] | null) {
   const [refreshCount, setRefreshCount] = useState(0);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
@@ -94,8 +99,8 @@ export function useMarketData(deals: Deal[] | null) {
     for (const key of needKey ? needKey.split(",") : []) {
       if (requested.current.has(key)) continue;
       requested.current.add(key);
-      const [ticker, announceDate, unaffectedDate] = key.split("|");
-      fetchUnaffectedPrice(ticker, announceDate, unaffectedDate || undefined).then((price) => {
+      const { ticker, announceDate, unaffectedDate } = parseUnaffectedKey(key);
+      fetchUnaffectedPrice(ticker, announceDate, unaffectedDate).then((price) => {
         // A failed lookup isn't remembered: the next Refresh tries again.
         if (price === null) requested.current.delete(key);
         setUnaffected((prev) => ({ ...prev, [key]: price }));

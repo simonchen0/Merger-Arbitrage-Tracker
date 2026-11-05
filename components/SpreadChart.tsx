@@ -45,7 +45,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { paylo
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded border border-border bg-bg px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-xl border border-border bg-bg px-3 py-2 text-xs shadow-lg">
       {/* Value leads, label follows */}
       <div className="num text-sm font-semibold text-text">{pct(p.spreadPct)}</div>
       <div className="text-muted">spread · close {usd(p.close)}</div>
@@ -126,7 +126,7 @@ export function SpreadChart({ points, isDemo }: { points: SpreadPoint[]; isDemo:
       {/* Table view: every value is reachable without hovering */}
       <details className="text-xs">
         <summary className="cursor-pointer text-muted hover:text-text">View data ({points.length} days)</summary>
-        <div className="mt-2 max-h-64 overflow-y-auto rounded border border-border">
+        <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border">
           <table className="w-full">
             <thead className="sticky top-0 bg-panel text-muted">
               <tr>

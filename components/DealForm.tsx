@@ -4,26 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { isValidDate, todayInNewYork } from "@/lib/calc";
 import { usd } from "@/lib/format";
 import type { Deal, Quote } from "@/lib/types";
+import { SYMBOL_RE, validateDeal, type Errors, type Fields } from "@/lib/validate";
 import { fetchUnaffectedPrice } from "@/lib/useMarketData";
-
-type Fields = {
-  targetTicker: string;
-  targetName: string;
-  acquirerName: string;
-  offerPrice: string;
-  announceDate: string;
-  expectedCloseDate: string;
-  unaffectedDate: string;
-  breakPrice: string;
-  sourceUrl: string;
-};
-type Errors = Partial<Record<keyof Fields, string>>;
+import { buttonClass } from "./ui";
 
 type TickerCheck =
   | { status: "idle" | "checking" | "missing" | "error"; ticker: string }
   | { status: "ok"; ticker: string; quote: Quote };
-
-const SYMBOL_RE = /^[A-Z0-9.\-^=]{1,15}$/;
 
 // crypto.randomUUID only exists on HTTPS/localhost pages (e.g. not the dev server's LAN address).
 function newId(): string {
@@ -44,39 +31,6 @@ function toFields(deal: Deal | null): Fields {
     breakPrice: deal?.breakPrice !== undefined ? String(deal.breakPrice) : "",
     sourceUrl: deal?.sourceUrl ?? "",
   };
-}
-
-function validate(f: Fields, today: string): Errors {
-  const e: Errors = {};
-  const ticker = f.targetTicker.trim().toUpperCase();
-  const offer = Number(f.offerPrice);
-
-  if (!SYMBOL_RE.test(ticker)) e.targetTicker = "Enter a ticker, e.g. ABC";
-  if (!f.targetName.trim()) e.targetName = "Required";
-  if (!f.acquirerName.trim()) e.acquirerName = "Required";
-  if (!f.offerPrice.trim() || !Number.isFinite(offer) || offer <= 0) e.offerPrice = "Enter a cash price per share above 0";
-
-  if (!isValidDate(f.announceDate)) e.announceDate = "Enter a valid date";
-  else if (f.announceDate > today) e.announceDate = "Announcement can't be in the future";
-
-  if (!isValidDate(f.expectedCloseDate)) e.expectedCloseDate = "Enter a valid date";
-  else if (isValidDate(f.announceDate) && f.expectedCloseDate <= f.announceDate)
-    e.expectedCloseDate = "Must be after the announcement date";
-
-  if (f.unaffectedDate.trim()) {
-    if (!isValidDate(f.unaffectedDate)) e.unaffectedDate = "Enter a valid date, or leave blank";
-    else if (isValidDate(f.announceDate) && f.unaffectedDate >= f.announceDate)
-      e.unaffectedDate = "Must be before the announcement date";
-  }
-
-  if (f.breakPrice.trim()) {
-    const b = Number(f.breakPrice);
-    if (!Number.isFinite(b) || b <= 0) e.breakPrice = "Enter a price above 0, or leave blank";
-    else if (Number.isFinite(offer) && offer > 0 && b >= offer) e.breakPrice = "Break price should be below the offer";
-  }
-
-  if (f.sourceUrl.trim() && !/^https?:\/\/\S+$/i.test(f.sourceUrl.trim())) e.sourceUrl = "Enter a full http(s) link";
-  return e;
 }
 
 async function lookupTicker(ticker: string): Promise<TickerCheck> {
@@ -141,7 +95,7 @@ export function DealForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const found = validate(fields, todayInNewYork());
+    const found = validateDeal(fields, todayInNewYork());
     setErrors(found);
     if (Object.keys(found).length) return;
 
@@ -187,7 +141,7 @@ export function DealForm({
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="m-auto w-[min(640px,calc(100vw-2rem))] rounded border border-border bg-panel p-0 text-text backdrop:bg-black/70"
+      className="m-auto w-[min(640px,calc(100vw-2rem))] rounded-2xl border border-border bg-panel p-0 text-text backdrop:bg-black/70"
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-5 p-5">
         <div className="flex items-baseline justify-between">
@@ -265,13 +219,13 @@ export function DealForm({
 
         {/* Pinned to the bottom of the dialog so it stays reachable on short screens */}
         <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end gap-2 border-t border-border bg-panel px-5 py-4">
-          <button type="button" onClick={onClose} className="rounded border border-border px-4 py-1.5 text-sm text-muted hover:text-text">
+          <button type="button" onClick={onClose} className={buttonClass("ghost", "md")}>
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving}
-            className="rounded border border-accent bg-accent/15 px-4 py-1.5 text-sm text-accent hover:bg-accent/25 disabled:opacity-50"
+            className={buttonClass("primary", "md")}
           >
             {saving ? "Checking ticker…" : deal ? "Save changes" : "Add deal"}
           </button>
@@ -282,7 +236,7 @@ export function DealForm({
 }
 
 const inputCls =
-  "w-full rounded border border-border bg-bg px-2.5 py-1.5 text-sm outline-none focus:border-accent disabled:opacity-60 [color-scheme:dark]";
+  "w-full rounded-lg border border-border bg-panel-2 px-3 py-2 text-sm outline-none transition-colors focus:border-accent disabled:opacity-60 [color-scheme:dark]";
 
 function Field({
   label,

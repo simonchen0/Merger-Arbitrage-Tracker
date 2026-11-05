@@ -2,6 +2,8 @@
 
 A dashboard for tracking announced **all-cash M&A deals** the way an event-driven fund would: how wide is the spread, what's the annualized return if the deal closes, what do you lose if it breaks, and how likely does the market think completion is?
 
+**Live demo: https://merger-arbitrage-tracker.vercel.app**
+
 ![Dashboard](docs/screenshots/dashboard.png)
 
 ## Features
@@ -88,12 +90,12 @@ Requires Node.js 22 or newer.
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm test         # calculation tests
+npm test         # unit tests (calculations, form validation, saved-deals store)
 npm run lint
 npm run build
 ```
 
-No environment variables or API keys are needed.
+No environment variables or API keys are needed. The same is true on Vercel: import the repo and deploy.
 
 ## Project structure
 
@@ -106,7 +108,8 @@ app/
 lib/
   calc.ts                  All financial math (+ calc.test.ts)
   dealRow.ts               Deal + market data → what the UI shows
-  deals.ts                 localStorage store
+  deals.ts                 localStorage store (versioned seed data)
+  validate.ts              Add/edit form validation
   demo.ts                  Demo deals and simulated prices
   useMarketData.ts         Client hook for live prices
 components/                DealTable, DealDetail, DealForm, SpreadChart, Badge

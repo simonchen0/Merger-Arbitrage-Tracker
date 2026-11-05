@@ -20,15 +20,17 @@ app/not-found.tsx, error.tsx   Themed 404 and error pages (the Next defaults are
 app/api/quotes/route.ts    Latest prices for a list of tickers
 app/api/history/route.ts   Daily closes for one ticker
 lib/types.ts               Deal type
+lib/validate.ts            Add/edit form validation (pure) + validate.test.ts
 lib/calc.ts                ALL financial math (pure functions) + calc.test.ts
 lib/deals.ts               localStorage store (v2 key, seedVersion): useDeals() hook, setDeals(), resetDeals(); syncs across tabs; refreshes demo deals nearing close
 lib/demo.ts                Demo deals (dates relative to when generated) + deterministic fake prices
 lib/dealRow.ts             buildRow(): deal + market data → price, break price, metrics (table + detail)
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
 lib/useMarketData.ts       Client hook: live quotes + unaffected prices for real deals, refresh()
-components/                DealTable, DealDetail, DealForm, SpreadChart, Badge
-data/seed-deals.json       Real deals seeded on first visit. When you change this file, bump SEED_VERSION in lib/deals.ts so returning visitors get the changes (user-added deals are kept). Terms come from SEC 8-K exhibits; expected close = end of the company-guided window.
+components/                DealTable, DealDetail, DealForm, SpreadChart, Badge, StatusBar (bottom bar), ui.tsx (cardClass/buttonClass helpers, logo)
+data/seed-deals.json       Real deals seeded on first visit. When you change this file, bump SEED_VERSION in lib/deals.ts so returning visitors get the changes (user-added deals are kept). When you delete a seed deal, also add its id to REMOVED_SEED_IDS there. Terms come from SEC 8-K exhibits; expected close = end of the company-guided window.
 scripts/check-data.ts      Manual Yahoo data check
+vitest.config.mts          Test config (adds the `@/` alias); tests sit next to the code as *.test.ts
 ```
 
 ## Financial calculations
@@ -54,20 +56,19 @@ Rules:
 ## Conventions
 - Keep it simple: no new dependencies, abstractions, state libraries, or features beyond the plan without asking first. Deferred: dividends, offer bumps, import/export, closed-deal case studies.
 - Small, focused components. Plain `fetch` and `useState`/`useEffect`; no data-fetching libraries.
-- Styling: use the theme tokens in `app/globals.css` (`bg`, `panel`, `border`, `text`, `muted`, `accent`, `up`, `down`, `est`) and the `.num` class for numbers.
+- Styling: use the theme tokens in `app/globals.css` (`bg`, `panel`, `panel-2`, `border`, `text`, `muted`, `accent`, `accent-strong`, `up`, `down`, `est`) and the `.num` class for numbers. Dark indigo theme with a violet accent; `up`/`down`/`est` keep their meaning (gain/loss/estimate) and the accent never replaces them. Buttons use `buttonClass()` and cards use `rounded-2xl` / `cardClass()` from `components/ui.tsx`. Keep text contrast at 4.5:1 or better.
 - API routes return clean JSON errors; the UI degrades gracefully when Yahoo fails.
 
 ## Workflow
 - Build incrementally, one phase at a time (see plan). Finish and verify each phase before starting the next.
 - Only change files related to the current task. No drive-by refactors or reformatting.
 - Test every change before calling it done:
-  - `npm test` (Vitest) for calculation changes
+  - `npm test` (Vitest): calculations, form validation, the saved-deals store, seed data
   - `npm run lint` and `npm run build` must be clean
   - `npm run dev` and check the affected page or route in the browser (or with `curl` for API routes)
 - Don't commit unless asked.
 
 ## Status (update at the end of each phase)
-- Phases 0-10 are done and pushed. After the Phase 10 code review, the three main findings plus the small ones were fixed (uncommitted until the owner says so): demo deals refresh and a seed version updates returning visitors; saved deals sync across tabs; `/api/history` rejects future dates and ranges over 5 years; `crypto.randomUUID` fallback; failed unaffected-price lookups retry on Refresh; `sourceUrl` re-checked when rendered; `engines` added.
-- Not done from the review: tests for form validation, the `isDeal` guard and key parsing (Vitest can't import `deals.ts` without a `@/` alias).
-- MISTRAS (MG) was dropped from the seed deals: its filing gives no unaffected date, so its downside would have been understated.
-- Next: Phase 11 (deploy to Vercel; plan is in `~/.claude/plans/`). Needs the owner's Vercel account. The one unverified risk is Yahoo Finance blocking Vercel's servers; the fallback is a Tiingo free key (not built).
+- v1 (11 phases) is done and live at https://merger-arbitrage-tracker.vercel.app (Vercel, auto-deploys on push to `main`). Post-review fixes and tests (67) are done; MISTRAS was dropped from the seed deals.
+- UI redesign v2 is in progress (plan in `~/.claude/plans/`): violet accent, Magic Eden-inspired. R0 (tokens, header, bottom status bar, shared helpers) is built; next R1 (summary strip, pill tabs, search), R2 (table, phone cards), R3 (detail page: payoff ladder, slider), R4 (chart, forms), R5 (QA, docs, screenshots).
+- Fixed: Yahoo returns an empty close for today's daily bar after hours, so the detail page appends the latest quote (`withLatestQuote` in `lib/calc.ts`) and the chart ends on the same day as the headline numbers.

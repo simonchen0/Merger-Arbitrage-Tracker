@@ -13,12 +13,18 @@ const STORAGE_KEY = "merger-arb-deals-v2";
 const LEGACY_STORAGE_KEY = "merger-arb-deals-v1"; // plain array, before seed versions
 
 /** Bump when data/seed-deals.json changes, so returning visitors pick the changes up. */
-const SEED_VERSION = 1;
+export const SEED_VERSION = 2;
+
+/**
+ * Ids of seeded deals that were later removed from data/seed-deals.json. Browsers that saved
+ * them drop them on the next seed version bump. (Add an id here whenever you delete a seed deal.)
+ */
+export const REMOVED_SEED_IDS = ["mg-hig"];
 
 /** A demo deal this close to its expected close date (or past it) gets fresh dates. */
 const DEMO_REFRESH_DAYS = 7;
 
-type Stored = { seedVersion: number; deals: Deal[] };
+export type Stored = { seedVersion: number; deals: Deal[] };
 
 let cache: Deal[] | null = null;
 const listeners = new Set<() => void>();
@@ -29,7 +35,7 @@ function seed(): Deal[] {
 }
 
 /** Guards against hand-edited or damaged storage: a bad entry would otherwise crash the page. */
-function isDeal(x: unknown): x is Deal {
+export function isDeal(x: unknown): x is Deal {
   if (typeof x !== "object" || x === null) return false;
   const d = x as Record<string, unknown>;
   return (
@@ -44,7 +50,7 @@ function isDeal(x: unknown): x is Deal {
   );
 }
 
-function readStored(): Stored | null {
+export function readStored(): Stored | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
@@ -67,20 +73,19 @@ function readStored(): Stored | null {
 
 /**
  * Brings stored deals up to date without touching the user's own changes:
- *  - a newer seed version adds/replaces the seeded real deals (by id); user-added deals stay
+ *  - a newer seed version adds/replaces the seeded real deals (by id) and drops removed ones; user-added deals stay
  *  - demo deals about to pass their close date get regenerated dates, so the demo never reads "past expected close"
  */
-function refresh(stored: Stored): { deals: Deal[]; changed: boolean } {
+export function refresh(stored: Stored, today = todayInNewYork()): { deals: Deal[]; changed: boolean } {
   let deals = stored.deals;
   let changed = stored.seedVersion !== SEED_VERSION;
 
   if (stored.seedVersion < SEED_VERSION) {
     const fresh = seedDeals as Deal[];
-    const freshIds = new Set(fresh.map((d) => d.id));
-    deals = [...deals.filter((d) => !freshIds.has(d.id)), ...fresh];
+    const replaced = new Set([...fresh.map((d) => d.id), ...REMOVED_SEED_IDS]);
+    deals = [...deals.filter((d) => !replaced.has(d.id)), ...fresh];
   }
 
-  const today = todayInNewYork();
   const freshDemos = new Map(createDemoDeals(today).map((d) => [d.id, d]));
   deals = deals.map((d) => {
     const fresh = d.isDemo ? freshDemos.get(d.id) : undefined;

@@ -10,6 +10,7 @@ import {
   spreadHistory,
   todayInNewYork,
   unaffectedPrice,
+  withLatestQuote,
 } from "./calc";
 
 // Reference case (hand-checked): P=48, O=50, B=40, d=120
@@ -222,6 +223,48 @@ describe("spreadHistory", () => {
     const result = spreadHistory(messy, 50, "2026-03-09");
     expect(result.map((r) => r.date)).toEqual(["2026-03-11", "2026-03-12"]);
     expect(result[1].spreadPct).toBeCloseTo(-1 / 51, 10);
+  });
+});
+
+describe("withLatestQuote", () => {
+  const bars = [
+    { date: "2026-11-02", close: 48.75 },
+    { date: "2026-11-03", close: 48.96 },
+  ];
+
+  it("adds the quote as the newest point when history stops earlier", () => {
+    expect(withLatestQuote(bars, "2026-11-04", 48.8)).toEqual([...bars, { date: "2026-11-04", close: 48.8 }]);
+  });
+
+  it("fills a day whose close is missing (Yahoo's empty bar for today after hours)", () => {
+    const withGap = [...bars, { date: "2026-11-04", close: null }];
+    const result = withLatestQuote(withGap, "2026-11-04", 48.8);
+    expect(result.filter((p) => p.date === "2026-11-04")).toEqual([{ date: "2026-11-04", close: 48.8 }]);
+    expect(result).toHaveLength(3);
+  });
+
+  it("keeps a real close that history already has for that day", () => {
+    const full = [...bars, { date: "2026-11-04", close: 48.81 }];
+    expect(withLatestQuote(full, "2026-11-04", 48.8)).toEqual(full);
+  });
+
+  it("ignores a quote older than the newest history, and bad prices", () => {
+    expect(withLatestQuote(bars, "2026-10-30", 50)).toEqual(bars);
+    expect(withLatestQuote(bars, "2026-11-04", NaN)).toEqual(bars);
+    expect(withLatestQuote(bars, "2026-11-04", 0)).toEqual(bars);
+  });
+
+  it("works with empty history, and does not change its input", () => {
+    expect(withLatestQuote([], "2026-11-04", 48.8)).toEqual([{ date: "2026-11-04", close: 48.8 }]);
+    const copy = JSON.parse(JSON.stringify(bars));
+    withLatestQuote(bars, "2026-11-04", 48.8);
+    expect(bars).toEqual(copy);
+  });
+
+  it("feeds spreadHistory so the chart's last point matches the headline spread", () => {
+    const points = spreadHistory(withLatestQuote([{ date: "2026-11-03", close: 48.96 }, { date: "2026-11-04", close: null }], "2026-11-04", 48.8), 49.75, "2026-11-03");
+    expect(points.at(-1)?.date).toBe("2026-11-04");
+    expect(points.at(-1)?.spreadPct).toBeCloseTo((49.75 - 48.8) / 48.8, 10);
   });
 });
 

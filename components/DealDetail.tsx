@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { spreadHistory, todayInNewYork, type PricePoint } from "@/lib/calc";
+import { spreadHistory, todayInNewYork, withLatestQuote, type PricePoint } from "@/lib/calc";
 import { buildRow, type DealRow } from "@/lib/dealRow";
 import { deleteDeal, saveDeal, useDeals } from "@/lib/deals";
 import { demoHistory } from "@/lib/demo";
@@ -11,6 +11,7 @@ import { pct, signClass, usd } from "@/lib/format";
 import type { Deal } from "@/lib/types";
 import { fetchHistory, useMarketData } from "@/lib/useMarketData";
 import { Badge } from "./Badge";
+import { buttonClass } from "./ui";
 import { DealForm } from "./DealForm";
 import { SpreadChart } from "./SpreadChart";
 
@@ -85,11 +86,15 @@ export function DealDetail({ id }: { id: string }) {
   }
 
   // undefined = still loading, null = unavailable
+  const loaded = history?.key === historyKey ? history.points : undefined;
+  const quote = market.quotes[deal.targetTicker];
   const closes: PricePoint[] | null | undefined = deal.isDemo
     ? demoHistory(deal, today)
-    : history?.key === historyKey
-      ? history.points
-      : undefined;
+    : // End the chart on the latest quote, so it matches the headline spread even when Yahoo's
+      // daily bar for today has no close yet (after hours).
+      loaded && quote
+      ? withLatestQuote(loaded, todayInNewYork(new Date(quote.asOf)), quote.price)
+      : loaded;
   const spreadPoints = closes ? spreadHistory(closes, deal.offerPrice, deal.announceDate) : [];
 
   const m = row.metrics;
@@ -102,7 +107,7 @@ export function DealDetail({ id }: { id: string }) {
       </Link>
 
       {deal.isDemo && (
-        <p className="rounded border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
+        <p className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
           Demo deal: fictional companies and simulated prices, for illustration only.
         </p>
       )}
@@ -123,13 +128,13 @@ export function DealDetail({ id }: { id: string }) {
         <div className="flex gap-2">
           <button
             onClick={() => setEditing(true)}
-            className="rounded border border-border px-3 py-1.5 text-xs hover:border-accent hover:text-accent"
+            className={buttonClass("secondary")}
           >
             Edit deal
           </button>
           <button
             onClick={handleDelete}
-            className="rounded border border-border px-3 py-1.5 text-xs text-muted hover:border-down hover:text-down"
+            className={buttonClass("danger")}
           >
             Delete
           </button>
@@ -137,7 +142,7 @@ export function DealDetail({ id }: { id: string }) {
       </div>
 
       {/* Terms */}
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded border border-border bg-panel p-4 text-sm sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-border bg-panel p-4 text-sm sm:grid-cols-4">
         <Term label="Announced" value={deal.announceDate} />
         <Term
           label="Expected close"
@@ -209,7 +214,7 @@ export function DealDetail({ id }: { id: string }) {
       </div>
 
       {/* Spread history */}
-      <section className="space-y-2 rounded border border-border bg-panel p-4">
+      <section className="space-y-2 rounded-2xl border border-border bg-panel p-4">
         <h2 className="text-sm font-semibold">Spread history</h2>
         {closes === undefined ? (
           <p className="py-10 text-center text-sm text-muted">Loading price history…</p>
@@ -222,7 +227,7 @@ export function DealDetail({ id }: { id: string }) {
 
       {/* Break price + scenario */}
       <div className="grid gap-4 md:grid-cols-2">
-        <section className="space-y-3 rounded border border-border bg-panel p-4">
+        <section className="space-y-3 rounded-2xl border border-border bg-panel p-4">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold">Break price</h2>
             {est && <Badge kind="est" title="Estimated: unaffected close before the announcement" />}
@@ -244,7 +249,7 @@ export function DealDetail({ id }: { id: string }) {
                 aria-label="Break price"
                 value={draft ?? (saved.breakPrice !== null ? saved.breakPrice.toFixed(2) : "")}
                 onChange={(e) => setDraft(e.target.value)}
-                className={`w-32 rounded border bg-bg py-1.5 pl-6 pr-2 text-sm outline-none num [color-scheme:dark] focus:border-accent ${
+                className={`w-32 rounded-lg border bg-panel-2 py-1.5 pl-6 pr-2 text-sm outline-none num [color-scheme:dark] focus:border-accent ${
                   draftError ? "border-down" : "border-border"
                 } ${est && draft === null ? "text-est" : ""}`}
               />
@@ -252,14 +257,14 @@ export function DealDetail({ id }: { id: string }) {
             <button
               onClick={() => saveBreak(draftValue!)}
               disabled={!usingDraft || draftValue === deal.breakPrice}
-              className="rounded border border-accent bg-accent/15 px-3 py-1.5 text-xs text-accent hover:bg-accent/25 disabled:cursor-not-allowed disabled:opacity-40"
+              className={buttonClass("primary")}
             >
               Save
             </button>
             {(deal.breakPrice !== undefined || draft !== null) && (
               <button
                 onClick={() => saveBreak(undefined)}
-                className="rounded border border-border px-3 py-1.5 text-xs text-muted hover:text-text"
+                className={buttonClass("secondary")}
               >
                 Use unaffected price{row.unaffected !== null ? ` (${usd(row.unaffected)})` : ""}
               </button>
@@ -271,7 +276,7 @@ export function DealDetail({ id }: { id: string }) {
           )}
         </section>
 
-        <section className="space-y-2 rounded border border-border bg-panel p-4 text-sm">
+        <section className="space-y-2 rounded-2xl border border-border bg-panel p-4 text-sm">
           <h2 className="text-sm font-semibold">The trade in one paragraph</h2>
           <Scenario row={row} />
         </section>
@@ -367,7 +372,7 @@ function StatCard({
   est?: boolean;
 }) {
   return (
-    <div className="space-y-1 rounded border border-border bg-panel p-3">
+    <div className="space-y-1 rounded-2xl border border-border bg-panel p-3">
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-muted">{label}</span>
         {est && <Badge kind="est" title="Uses the estimated break price" />}

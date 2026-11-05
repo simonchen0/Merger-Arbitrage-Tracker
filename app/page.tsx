@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Badge } from "@/components/Badge";
 import { DealForm } from "@/components/DealForm";
 import { DealTable } from "@/components/DealTable";
+import { buttonClass } from "@/components/ui";
 import { todayInNewYork } from "@/lib/calc";
 import { buildRow } from "@/lib/dealRow";
 import { deleteDeal, resetDeals, saveDeal, useDeals } from "@/lib/deals";
@@ -21,10 +21,6 @@ export default function Dashboard() {
 
   function handleDelete(deal: Deal) {
     if (confirm(`Delete ${deal.targetTicker} (${deal.targetName})?`)) deleteDeal(deal.id);
-  }
-
-  function handleReset() {
-    if (confirm("Replace all deals with the sample data? Your added and edited deals will be lost.")) resetDeals();
   }
 
   const rows = useMemo(() => {
@@ -66,13 +62,13 @@ export default function Dashboard() {
             onClick={market.refresh}
             disabled={!market.hasRealDeals || loading}
             title={market.hasRealDeals ? "Fetch latest prices" : "No real deals to refresh"}
-            className="rounded border border-border px-3 py-1.5 text-xs hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-text"
+            className={buttonClass("secondary")}
           >
             {loading ? "Refreshing…" : "Refresh"}
           </button>
           <button
             onClick={() => setEditing("new")}
-            className="rounded border border-accent bg-accent/15 px-3 py-1.5 text-xs text-accent hover:bg-accent/25"
+            className={buttonClass("primary")}
           >
             + Add deal
           </button>
@@ -80,7 +76,7 @@ export default function Dashboard() {
       </div>
 
       {market.error && (
-        <p className="rounded border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
+        <p className="rounded-xl border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
           Couldn&apos;t refresh prices ({market.error}). Showing the last prices loaded.
         </p>
       )}
@@ -88,7 +84,7 @@ export default function Dashboard() {
       {rows === null ? (
         <p className="text-sm text-muted">Loading…</p>
       ) : rows.length === 0 ? (
-        <div className="space-y-3 rounded border border-border bg-panel px-3 py-10 text-center text-sm text-muted">
+        <div className="space-y-3 rounded-2xl border border-border bg-panel px-3 py-10 text-center text-sm text-muted">
           {deals && deals.length === 0 ? (
             <>
               <p>No deals tracked yet.</p>
@@ -129,20 +125,6 @@ export default function Dashboard() {
           }}
         />
       )}
-
-      <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-        <span>
-          <Badge kind="demo" /> fictional deal, simulated prices
-        </span>
-        <span>
-          <Badge kind="est" /> <span className="text-est">amber</span> = uses the estimated break price
-          (unaffected close before announcement)
-        </span>
-        <span>Ann. return = spread % × 365 / days to close · Real prices from Yahoo Finance, delayed ~15 min</span>
-        <button onClick={handleReset} className="ml-auto underline decoration-dotted hover:text-text">
-          Reset to sample data
-        </button>
-      </p>
     </div>
   );
 }

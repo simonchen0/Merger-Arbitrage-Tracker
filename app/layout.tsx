@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { LogoMark } from "@/components/ui";
+import { StatusBar } from "@/components/StatusBar";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -14,16 +16,28 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col">
-        <header className="border-b border-border bg-panel">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-            <Link href="/" className="font-mono text-sm font-semibold tracking-wider text-accent">
-              MERGER ARB TRACKER
+      <body className="flex min-h-full flex-col">
+        <header className="sticky top-0 z-20 border-b border-border bg-bg/80 backdrop-blur">
+          <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4">
+            <Link href="/" className="flex items-center gap-2.5">
+              <LogoMark />
+              <span className="font-mono text-[13px] font-semibold tracking-[0.18em]">
+                MERGER ARB <span className="text-muted">TRACKER</span>
+              </span>
             </Link>
-            <span className="hidden text-xs text-muted sm:inline">All-cash deals · Prices delayed ~15 min</span>
+            <nav aria-label="Main" className="flex items-center text-sm">
+              <Link
+                href="/"
+                className="rounded-lg bg-panel-2 px-3 py-1.5 font-medium text-text transition-colors hover:text-accent"
+              >
+                Deals
+              </Link>
+            </nav>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6">{children}</main>
+        {/* Bottom padding keeps content clear of the fixed status bar. */}
+        <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-20 pt-8">{children}</main>
+        <StatusBar />
       </body>
     </html>
   );
