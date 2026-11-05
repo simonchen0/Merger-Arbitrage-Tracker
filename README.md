@@ -1,6 +1,6 @@
 # Merger Arbitrage Tracker
 
-A dashboard for tracking announced **all-cash M&A deals** the way an event-driven fund would: how wide is the spread, what's the annualized return if the deal closes, what do you lose if it breaks, and how likely does the market think completion is?
+A dashboard for tracking announced **all-cash M&A deals** the way an event-driven fund would: how wide is the spread, what's the annualized return if the deal closes, what do you lose if it breaks, and how likely does the market think completion is? It can also track rumoured deals reported by the press, kept separate and clearly labelled as unconfirmed.
 
 **Live demo: https://merger-arbitrage-tracker.vercel.app**
 
@@ -13,6 +13,7 @@ A dashboard for tracking announced **all-cash M&A deals** the way an event-drive
 - **Deal analysis.** A detail page per deal with the metrics above, an editable break price that recalculates live, and a plain-English summary of the trade.
 - **Spread history.** A chart of how each deal's spread has moved since announcement, with a table of the underlying data.
 - **Real deals only.** Five real pending deals (terms from SEC 8-K filings, each with a source link). Everything the tracker shows is a real deal.
+- **Rumoured deals.** A separate section for deals reported by the press but not yet announced, each linked to the original report. Spreads from reported prices are marked as indicative. See [Rumoured deals](#rumoured-deals).
 
 ![Deal detail](docs/screenshots/deal-detail.png)
 
@@ -73,6 +74,28 @@ Companies guide closing as a window ("Q1 2027"). The seeded deals use the **end*
 
 These are a snapshot, not a live deal feed. Deal terms change (offer increases, extended timelines) and nothing here updates them. Check the linked filing before relying on a number.
 
+## Rumoured deals
+
+Below the announced deals is a separate section for rumoured deals: potential acquisitions reported by the press but not announced by the companies. It is tagged **UNCONFIRMED** and kept out of the summary numbers.
+
+**Accuracy rules**
+
+- **A source is required.** Every rumour links to the original report, and the link must be on a trusted publisher's site: WSJ, Bloomberg, Reuters, FT, CNBC, NYT, The Information, Dow Jones or Barron's. The publisher shown is read from the link, so the two can't disagree. Lookalike domains and syndicated copies (e.g. on Yahoo) are rejected.
+- **Nothing is assumed.** The potential acquirer, a per-share price and a closing timeframe are entered only if the report states them. Anything missing shows as "Not disclosed".
+- **Numbers are indicative.** If a report gives a per-share cash price, the spread is calculated against it. It's shown in amber with an **INDICATIVE** tag, because the terms are unconfirmed. Annualized return appears only when the report also gives a timeframe. There's no downside or break-even, since nothing has been agreed.
+- **No starting rumours.** Rumours go stale quickly and each one needs checking against its source, so the list starts empty.
+
+**Can rumours be found automatically?** I looked into it and, for now, no. Rumours are added by hand.
+
+| Source | What's available |
+|---|---|
+| Bloomberg | No public API (Terminal and B-PIPE are paid). Automated access is blocked and against its terms. |
+| WSJ / Dow Jones | Newswires and Factiva are paid. Public RSS has headlines only, and articles are paywalled. |
+| Reuters | Public RSS was discontinued in 2020. The news API is paid (LSEG). |
+| Yahoo Finance search | Free (via `yahoo-finance2`) and returns recent headlines per ticker. But in a test across six queries (about 110 headlines), every link pointed to a Yahoo-hosted copy, never the original Reuters, Bloomberg or WSJ article. Most items also came from secondary sites rather than the outlets that break rumours. |
+
+Even with a feed, pulling terms out of headlines would mean guessing: "$5bn deal" isn't a per-share price, and "exploring a sale" isn't "in talks". That conflicts with the no-fabrication rule, so a person reads the report and enters the terms.
+
 ## Known limitations
 
 - **Offer increases and special dividends aren't modeled.** The spread chart uses the current offer for every day.
@@ -89,7 +112,7 @@ Requires Node.js 22 or newer.
 ```bash
 npm install
 npm run dev      # http://localhost:3000
-npm test         # unit tests (calculations, form validation, saved-deals store)
+npm test         # unit tests (calculations, form validation, saved deals and rumours, sources)
 npm run lint
 npm run build
 ```
@@ -108,11 +131,14 @@ lib/
   calc.ts                  All financial math (+ calc.test.ts)
   dealRow.ts               Deal + market data → what the UI shows
   deals.ts                 localStorage store (versioned seed data)
+  rumours.ts               localStorage store for rumoured deals (no seed)
+  sources.ts               Trusted-publisher allowlist for rumour links
   validate.ts              Add/edit form validation
   useMarketData.ts         Client hook for live prices
   format.ts                Display formatting (money, percent, as-of time)
 components/                DealTable, DealDetail, PayoffLadder, DealForm, SpreadChart,
-                           SummaryStrip, StatusBar, Badge, shared UI helpers
+                           RumourTable, RumourForm, SummaryStrip, StatusBar, Badge,
+                           shared UI helpers
 data/seed-deals.json       Real deals seeded on first visit
 ```
 
