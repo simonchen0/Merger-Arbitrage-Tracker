@@ -1,10 +1,11 @@
 // Rumoured deals live in the browser (localStorage), separate from announced deals.
-// There is no seed list: rumours go stale fast and each one needs checking against its source,
-// so the list starts empty and the user adds what they've verified.
+// There is no seed list; the headline scan (lib/useRumourScan.ts) adds unverified "auto-found"
+// rows, which are labelled as such and expire after 30 days unless the user edits them.
 //
 // Same pattern as lib/deals.ts: useRumours() subscribes components to the stored list, and
 // every change re-renders the subscribers (including other open tabs).
 import { useSyncExternalStore } from "react";
+import { daysBetween, todayInNewYork } from "./calc";
 import type { Rumour } from "./types";
 
 const STORAGE_KEY = "merger-arb-rumours-v1";
@@ -27,8 +28,58 @@ export function isRumour(x: unknown): x is Rumour {
     typeof r.reportDate === "string" &&
     optional(r.acquirerName, "string") &&
     optional(r.reportedPrice, "number") &&
-    optional(r.reportedCloseDate, "string")
+    optional(r.reportedCloseDate, "string") &&
+    optional(r.headline, "string") &&
+    (r.autoFound === undefined || r.autoFound === true)
   );
+}
+
+/** Auto-found rumours stop being shown this many days after their report date. */
+export const AUTO_FOUND_MAX_AGE_DAYS = 30;
+
+/**
+ * Drops auto-found rumours that have gone stale. Rumours the user added or edited are kept
+ * however old they are.
+ */
+export function dropStale(rumours: Rumour[], today: string): Rumour[] {
+  return rumours.filter((r) => {
+    if (!r.autoFound) return true;
+    const age = daysBetween(r.reportDate, today);
+    return age === null || age <= AUTO_FOUND_MAX_AGE_DAYS;
+  });
+}
+
+// What the headline scan remembers between visits: when it last ran, and which tickers the user
+// deleted so the scan doesn't add them back.
+const SCAN_KEY = "merger-arb-rumour-scan-v1";
+export type ScanState = { lastScan: number; dismissed: string[] };
+
+export function parseScanState(raw: string | null): ScanState {
+  try {
+    const p = raw ? JSON.parse(raw) : null;
+    return {
+      lastScan: p && Number.isFinite(p.lastScan) ? p.lastScan : 0,
+      dismissed: p && Array.isArray(p.dismissed) ? p.dismissed.filter((s: unknown) => typeof s === "string") : [],
+    };
+  } catch {
+    return { lastScan: 0, dismissed: [] };
+  }
+}
+
+export function readScanState(): ScanState {
+  try {
+    return parseScanState(localStorage.getItem(SCAN_KEY));
+  } catch {
+    return { lastScan: 0, dismissed: [] };
+  }
+}
+
+export function writeScanState(state: ScanState): void {
+  try {
+    localStorage.setItem(SCAN_KEY, JSON.stringify(state));
+  } catch {
+    // Storage blocked: the scan just runs again next visit.
+  }
 }
 
 /** The saved rumours (invalid entries dropped), or an empty list if none or unreadable. */
@@ -36,7 +87,7 @@ export function readStoredRumours(): Rumour[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
-    return Array.isArray(parsed) ? parsed.filter(isRumour) : [];
+    return Array.isArray(parsed) ? dropStale(parsed.filter(isRumour), todayInNewYork()) : [];
   } catch {
     return [];
   }
@@ -68,8 +119,27 @@ export function saveRumour(rumour: Rumour): void {
   setRumours(exists ? list.map((r) => (r.id === rumour.id ? rumour : r)) : [...list, rumour]);
 }
 
+/** Adds several rumours at once (the headline scan's results). */
+export function saveRumours(added: Rumour[]): void {
+  if (added.length === 0) return;
+  const list = getRumours();
+  const ids = new Set(added.map((r) => r.id));
+  setRumours([...list.filter((r) => !ids.has(r.id)), ...added]);
+}
+
+export function getRumourList(): Rumour[] {
+  return getRumours();
+}
+
+/** Deleting an auto-found rumour also dismisses its ticker, so the next scan doesn't add it back. */
 export function deleteRumour(id: string): void {
-  setRumours(getRumours().filter((r) => r.id !== id));
+  const list = getRumours();
+  const gone = list.find((r) => r.id === id);
+  if (gone?.autoFound) {
+    const state = readScanState();
+    writeScanState({ ...state, dismissed: [...new Set([...state.dismissed, gone.targetTicker.toUpperCase()])] });
+  }
+  setRumours(list.filter((r) => r.id !== id));
 }
 
 function subscribe(listener: () => void): () => void {

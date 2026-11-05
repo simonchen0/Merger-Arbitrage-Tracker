@@ -5,6 +5,8 @@ const kinds = {
   ind: { label: "INDICATIVE", cls: "border-est/40 bg-est/10 text-est" },
   // A deal that has been reported but not announced.
   rumour: { label: "UNCONFIRMED", cls: "border-muted/50 bg-panel-2 text-muted" },
+  // A rumour added by the headline scan rather than by a person: unverified until edited.
+  auto: { label: "AUTO-FOUND", cls: "border-accent/40 bg-accent/10 text-accent" },
 };
 
 export function Badge({ kind, title }: { kind: keyof typeof kinds; title?: string }) {

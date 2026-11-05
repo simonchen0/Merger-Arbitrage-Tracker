@@ -5,6 +5,7 @@
 // with more than one ticker is skipped rather than guessed at. See the plan in the README.
 import { todayInNewYork } from "./calc";
 import { publisherFor } from "./sources";
+import type { Rumour } from "./types";
 
 /** The parts of a Yahoo news item we use. */
 export type NewsItem = {
@@ -90,4 +91,35 @@ export function pickCandidates(
     }
   }
   return [...earliest.values()].sort((a, b) => b.at - a.at).map((e) => e.c);
+}
+
+/** A candidate with the company name from its quote (added by the scan route). */
+export type ScanCandidate = Candidate & { name: string };
+
+/**
+ * Turns scan candidates into rumours to add, skipping tickers already tracked, already an
+ * announced deal, or dismissed (deleted by the user, so they don't come back). Terms stay blank:
+ * a headline is never read for an acquirer, price or timeframe.
+ */
+export function newRumoursFromScan(
+  candidates: ScanCandidate[],
+  opts: { tracked: Iterable<string>; announced: Iterable<string>; dismissed: Iterable<string> },
+): Rumour[] {
+  const skip = new Set([...opts.tracked, ...opts.announced, ...opts.dismissed].map((s) => s.toUpperCase()));
+  const out: Rumour[] = [];
+  for (const c of candidates) {
+    const ticker = c.ticker.toUpperCase();
+    if (skip.has(ticker)) continue;
+    skip.add(ticker);
+    out.push({
+      id: `auto-${ticker}`,
+      targetTicker: ticker,
+      targetName: c.name,
+      sourceUrl: c.link,
+      reportDate: c.date,
+      autoFound: true,
+      headline: c.headline,
+    });
+  }
+  return out;
 }

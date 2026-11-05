@@ -5,7 +5,7 @@
 // tickers it already tracks. Cached briefly on the server so many visitors share one scan.
 import { cacheLife } from "next/cache";
 import YahooFinance from "yahoo-finance2";
-import { pickCandidates, type Candidate, type NewsItem } from "@/lib/rumourScan";
+import { pickCandidates, type NewsItem, type ScanCandidate } from "@/lib/rumourScan";
 
 const yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
@@ -20,8 +20,6 @@ const QUERIES = [
   "take-private talks",
 ];
 const MAX_CANDIDATES = 30;
-
-export type ScanCandidate = Candidate & { name: string };
 
 async function scan(): Promise<ScanCandidate[]> {
   "use cache";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isRumourHeadline, pickCandidates, targetTicker, type NewsItem } from "./rumourScan";
+import { isRumourHeadline, newRumoursFromScan, pickCandidates, targetTicker, type NewsItem, type ScanCandidate } from "./rumourScan";
 
 // Headlines below are real Yahoo Finance news items seen on 2026-11-05, with their related tickers.
 const NOW = new Date("2026-11-05T15:00:00Z");
@@ -142,5 +142,51 @@ describe("pickCandidates", () => {
 
   it("returns nothing for an empty feed", () => {
     expect(pickCandidates([], { now: NOW })).toEqual([]);
+  });
+});
+
+describe("newRumoursFromScan", () => {
+  const cand = (ticker: string, name = `${ticker} Inc.`): ScanCandidate => ({
+    ticker,
+    name,
+    headline: `${name} takeover bid`,
+    publisher: "Investing.com",
+    link: link(ticker.toLowerCase()),
+    date: "2026-10-28",
+  });
+  const none = { tracked: [], announced: [], dismissed: [] };
+
+  it("makes auto-found rumours with the headline and no terms", () => {
+    const [r] = newRumoursFromScan([cand("WEN", "The Wendy's Company")], none);
+    expect(r).toEqual({
+      id: "auto-WEN",
+      targetTicker: "WEN",
+      targetName: "The Wendy's Company",
+      sourceUrl: link("wen"),
+      reportDate: "2026-10-28",
+      autoFound: true,
+      headline: "The Wendy's Company takeover bid",
+    });
+    // Never an acquirer, price or timeframe.
+    expect(r).not.toHaveProperty("acquirerName");
+    expect(r).not.toHaveProperty("reportedPrice");
+    expect(r).not.toHaveProperty("reportedCloseDate");
+  });
+
+  it("skips tickers already tracked, already announced, or dismissed by the user (any case)", () => {
+    const out = newRumoursFromScan([cand("WEN"), cand("XPOF"), cand("GFL"), cand("PTC")], {
+      tracked: ["wen"],
+      announced: ["PTC"],
+      dismissed: ["gfl"],
+    });
+    expect(out.map((r) => r.targetTicker)).toEqual(["XPOF"]);
+  });
+
+  it("adds a ticker only once if the candidates repeat it", () => {
+    expect(newRumoursFromScan([cand("WEN"), cand("WEN")], none)).toHaveLength(1);
+  });
+
+  it("returns nothing for no candidates", () => {
+    expect(newRumoursFromScan([], none)).toEqual([]);
   });
 });
