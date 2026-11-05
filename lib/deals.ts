@@ -1,28 +1,29 @@
 // Deals live in the browser (localStorage). On first visit they're seeded with
-// the real deals from data/seed-deals.json plus generated demo deals.
+// the real deals from data/seed-deals.json.
 //
 // useDeals() subscribes components to the stored list; setDeals() saves and
 // re-renders every subscriber. No state library needed.
 import { useSyncExternalStore } from "react";
 import seedDeals from "@/data/seed-deals.json";
-import { daysBetween, todayInNewYork } from "./calc";
-import { createDemoDeals } from "./demo";
 import type { Deal } from "./types";
 
 const STORAGE_KEY = "merger-arb-deals-v2";
 const LEGACY_STORAGE_KEY = "merger-arb-deals-v1"; // plain array, before seed versions
 
 /** Bump when data/seed-deals.json changes, so returning visitors pick the changes up. */
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 /**
  * Ids of seeded deals that were later removed from data/seed-deals.json. Browsers that saved
  * them drop them on the next seed version bump. (Add an id here whenever you delete a seed deal.)
  */
-export const REMOVED_SEED_IDS = ["mg-hig"];
-
-/** A demo deal this close to its expected close date (or past it) gets fresh dates. */
-const DEMO_REFRESH_DAYS = 7;
+export const REMOVED_SEED_IDS = [
+  "mg-hig", // MISTRAS: dropped (no unaffected date in its filing)
+  // The fictional demo deals (v3): the tracker only shows real deals.
+  "demo-northwind",
+  "demo-brightline",
+  "demo-coastal",
+];
 
 export type Stored = { seedVersion: number; deals: Deal[] };
 
@@ -31,7 +32,7 @@ const listeners = new Set<() => void>();
 let storageBound = false;
 
 function seed(): Deal[] {
-  return [...(seedDeals as Deal[]), ...createDemoDeals(todayInNewYork())];
+  return [...(seedDeals as Deal[])];
 }
 
 /** Guards against hand-edited or damaged storage: a bad entry would otherwise crash the page. */
@@ -40,7 +41,6 @@ export function isDeal(x: unknown): x is Deal {
   const d = x as Record<string, unknown>;
   return (
     typeof d.id === "string" &&
-    typeof d.isDemo === "boolean" &&
     typeof d.targetTicker === "string" &&
     typeof d.targetName === "string" &&
     typeof d.acquirerName === "string" &&
@@ -72,31 +72,15 @@ export function readStored(): Stored | null {
 }
 
 /**
- * Brings stored deals up to date without touching the user's own changes:
- *  - a newer seed version adds/replaces the seeded real deals (by id) and drops removed ones; user-added deals stay
- *  - demo deals about to pass their close date get regenerated dates, so the demo never reads "past expected close"
+ * Brings stored deals up to date without touching the user's own changes: a newer seed version
+ * adds/replaces the seeded deals (by id) and drops removed ones; user-added deals stay.
  */
-export function refresh(stored: Stored, today = todayInNewYork()): { deals: Deal[]; changed: boolean } {
-  let deals = stored.deals;
-  let changed = stored.seedVersion !== SEED_VERSION;
+export function refresh(stored: Stored): { deals: Deal[]; changed: boolean } {
+  if (stored.seedVersion >= SEED_VERSION) return { deals: stored.deals, changed: stored.seedVersion !== SEED_VERSION };
 
-  if (stored.seedVersion < SEED_VERSION) {
-    const fresh = seedDeals as Deal[];
-    const replaced = new Set([...fresh.map((d) => d.id), ...REMOVED_SEED_IDS]);
-    deals = [...deals.filter((d) => !replaced.has(d.id)), ...fresh];
-  }
-
-  const freshDemos = new Map(createDemoDeals(today).map((d) => [d.id, d]));
-  deals = deals.map((d) => {
-    const fresh = d.isDemo ? freshDemos.get(d.id) : undefined;
-    if (!fresh) return d;
-    const left = daysBetween(today, d.expectedCloseDate);
-    if (left !== null && left > DEMO_REFRESH_DAYS) return d;
-    changed = true;
-    return fresh;
-  });
-
-  return { deals, changed };
+  const fresh = seedDeals as Deal[];
+  const replaced = new Set([...fresh.map((d) => d.id), ...REMOVED_SEED_IDS]);
+  return { deals: [...stored.deals.filter((d) => !replaced.has(d.id)), ...fresh], changed: true };
 }
 
 function load(): Deal[] {

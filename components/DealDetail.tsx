@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react";
 import { spreadHistory, todayInNewYork, withLatestQuote, type PricePoint } from "@/lib/calc";
 import { buildRow, type DealRow } from "@/lib/dealRow";
 import { deleteDeal, saveDeal, useDeals } from "@/lib/deals";
-import { demoHistory } from "@/lib/demo";
 import { pct, signClass, usd } from "@/lib/format";
 import type { Deal } from "@/lib/types";
 import { fetchHistory, useMarketData } from "@/lib/useMarketData";
@@ -25,8 +24,8 @@ export function DealDetail({ id }: { id: string }) {
   // Break price being typed (null = not editing, show the saved value).
   const [draft, setDraft] = useState<string | null>(null);
 
-  // Daily closes since announcement for real deals (demo history is generated locally).
-  const historyKey = deal && !deal.isDemo ? `${deal.targetTicker}|${deal.announceDate}` : null;
+  // Daily closes since announcement.
+  const historyKey = deal ? `${deal.targetTicker}|${deal.announceDate}` : null;
   const [history, setHistory] = useState<{ key: string; points: PricePoint[] | null } | null>(null);
   useEffect(() => {
     if (!historyKey) return;
@@ -88,13 +87,10 @@ export function DealDetail({ id }: { id: string }) {
   // undefined = still loading, null = unavailable
   const loaded = history?.key === historyKey ? history.points : undefined;
   const quote = market.quotes[deal.targetTicker];
-  const closes: PricePoint[] | null | undefined = deal.isDemo
-    ? demoHistory(deal, today)
-    : // End the chart on the latest quote, so it matches the headline spread even when Yahoo's
-      // daily bar for today has no close yet (after hours).
-      loaded && quote
-      ? withLatestQuote(loaded, todayInNewYork(new Date(quote.asOf)), quote.price)
-      : loaded;
+  // End the chart on the latest quote, so it matches the headline spread even when Yahoo's
+  // daily bar for today has no close yet (after hours).
+  const closes: PricePoint[] | null | undefined =
+    loaded && quote ? withLatestQuote(loaded, todayInNewYork(new Date(quote.asOf)), quote.price) : loaded;
   const spreadPoints = closes ? spreadHistory(closes, deal.offerPrice, deal.announceDate) : [];
 
   const m = row.metrics;
@@ -106,18 +102,11 @@ export function DealDetail({ id }: { id: string }) {
         ← All deals
       </Link>
 
-      {deal.isDemo && (
-        <p className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm text-accent">
-          Demo deal: fictional companies and simulated prices, for illustration only.
-        </p>
-      )}
-
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
             <h1 className="font-mono text-2xl font-semibold">{deal.targetTicker}</h1>
-            {deal.isDemo && <Badge kind="demo" />}
           </div>
           <p className="text-text">{deal.targetName}</p>
           <p className="text-sm text-muted">
@@ -175,7 +164,7 @@ export function DealDetail({ id }: { id: string }) {
                 Announcement ↗
               </a>
             ) : (
-              <span className="text-muted">{deal.isDemo ? "n/a (demo)" : "Not provided"}</span>
+              <span className="text-muted">Not provided</span>
             )
           }
         />
@@ -221,7 +210,7 @@ export function DealDetail({ id }: { id: string }) {
         ) : closes === null ? (
           <p className="py-10 text-center text-sm text-muted">Price history unavailable for {deal.targetTicker}.</p>
         ) : (
-          <SpreadChart points={spreadPoints} isDemo={deal.isDemo} />
+          <SpreadChart points={spreadPoints} />
         )}
       </section>
 

@@ -1,5 +1,4 @@
 const styles = {
-  demo: "border-accent/40 bg-accent/10 text-accent",
   est: "border-est/40 bg-est/10 text-est",
 };
 

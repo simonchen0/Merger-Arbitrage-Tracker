@@ -4,7 +4,6 @@ import { parseUnaffectedKey, unaffectedKey } from "./useMarketData";
 
 const deal: Deal = {
   id: "x",
-  isDemo: false,
   targetName: "Varonis",
   targetTicker: "VRNS",
   acquirerName: "Proofpoint",

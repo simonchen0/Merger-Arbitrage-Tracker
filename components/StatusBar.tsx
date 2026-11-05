@@ -6,7 +6,7 @@ import { Badge } from "./Badge";
 /** Persistent bottom bar: where the data comes from, what the badges mean, and reset. */
 export function StatusBar() {
   function handleReset() {
-    if (confirm("Replace all deals with the sample data? Your added and edited deals will be lost.")) resetDeals();
+    if (confirm("Replace all deals with the starting deals? Deals you added or edited will be lost.")) resetDeals();
   }
 
   return (
@@ -20,15 +20,12 @@ export function StatusBar() {
         </span>
 
         <span className="hidden shrink-0 items-center gap-2 md:flex">
-          <Badge kind="demo" /> fictional deal, simulated prices
-        </span>
-        <span className="hidden shrink-0 items-center gap-2 md:flex">
           <Badge kind="est" /> uses the estimated break price
         </span>
         <span className="hidden shrink-0 xl:inline">Ann. return = spread % × 365 / days to close</span>
 
         <button onClick={handleReset} className="ml-auto shrink-0 transition-colors hover:text-text">
-          Reset to sample data
+          Reset to the starting deals
         </button>
       </div>
     </footer>

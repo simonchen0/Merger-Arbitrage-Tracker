@@ -1,16 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import seedDeals from "@/data/seed-deals.json";
-import { createDemoDeals } from "./demo";
 import { REMOVED_SEED_IDS, SEED_VERSION, isDeal, readStored, refresh, type Stored } from "./deals";
-import { daysBetween } from "./calc";
 import type { Deal } from "./types";
 
-const TODAY = "2026-11-04";
 const seeds = seedDeals as Deal[];
 
 const userDeal: Deal = {
   id: "user-1",
-  isDemo: false,
   targetName: "My Deal",
   targetTicker: "ABC",
   acquirerName: "Buyer",
@@ -31,6 +27,10 @@ describe("isDeal", () => {
     expect(isDeal({ ...userDeal, breakPrice: 40, unaffectedDate: "2026-09-20", sourceUrl: "https://x.test" })).toBe(true);
   });
 
+  it("still accepts deals saved by older versions, which carried an extra isDemo field", () => {
+    expect(isDeal({ ...userDeal, isDemo: false })).toBe(true);
+  });
+
   it("rejects non-objects", () => {
     for (const bad of [null, undefined, "junk", 5, true, []]) expect(isDeal(bad)).toBe(false);
   });
@@ -40,7 +40,6 @@ describe("isDeal", () => {
     delete noId.id;
     expect(isDeal(noId)).toBe(false);
     expect(isDeal({ ...userDeal, offerPrice: "50" })).toBe(false);
-    expect(isDeal({ ...userDeal, isDemo: "no" })).toBe(false);
     expect(isDeal({ ...userDeal, targetTicker: 12 })).toBe(false);
     expect(isDeal({ ...userDeal, expectedCloseDate: undefined })).toBe(false);
   });
@@ -85,16 +84,16 @@ describe("readStored", () => {
 
 describe("refresh", () => {
   const current = (deals: Deal[]): Stored => ({ seedVersion: SEED_VERSION, deals });
+  const demoDeal = (id: string): Deal => ({ ...userDeal, id, targetTicker: "DEMO" });
 
   it("leaves an up-to-date list alone", () => {
-    const demos = createDemoDeals(TODAY);
-    const { deals, changed } = refresh(current([...seeds, ...demos, userDeal]), TODAY);
+    const { deals, changed } = refresh(current([...seeds, userDeal]));
     expect(changed).toBe(false);
-    expect(deals).toEqual([...seeds, ...demos, userDeal]);
+    expect(deals).toEqual([...seeds, userDeal]);
   });
 
   it("adds the seeded deals for an old stored version and keeps the user's own", () => {
-    const { deals, changed } = refresh({ seedVersion: 0, deals: [userDeal] }, TODAY);
+    const { deals, changed } = refresh({ seedVersion: 0, deals: [userDeal] });
     expect(changed).toBe(true);
     expect(deals.map((d) => d.id)).toContain("user-1");
     for (const s of seeds) expect(deals.map((d) => d.id)).toContain(s.id);
@@ -102,39 +101,36 @@ describe("refresh", () => {
 
   it("replaces a stored seed deal with the new seed version of it", () => {
     const edited = { ...seeds[0], offerPrice: 1 };
-    const { deals } = refresh({ seedVersion: 0, deals: [edited] }, TODAY);
+    const { deals } = refresh({ seedVersion: 0, deals: [edited] });
     expect(deals.find((d) => d.id === seeds[0].id)?.offerPrice).toBe(seeds[0].offerPrice);
   });
 
   it("removes seed deals that were later dropped, but only on a version bump", () => {
-    const gone: Deal = { ...userDeal, id: REMOVED_SEED_IDS[0], targetTicker: "MG" };
-    const old = refresh({ seedVersion: SEED_VERSION - 1, deals: [gone, userDeal] }, TODAY);
+    const gone = demoDeal(REMOVED_SEED_IDS[0]);
+    const old = refresh({ seedVersion: SEED_VERSION - 1, deals: [gone, userDeal] });
     expect(old.deals.map((d) => d.id)).not.toContain(REMOVED_SEED_IDS[0]);
     expect(old.deals.map((d) => d.id)).toContain("user-1");
     // Already current: the user's list is not touched.
-    const same = refresh(current([gone, userDeal]), TODAY);
+    const same = refresh(current([gone, userDeal]));
     expect(same.deals.map((d) => d.id)).toContain(REMOVED_SEED_IDS[0]);
   });
 
-  it("regenerates a demo deal that is past or close to its expected close date", () => {
-    const stale: Deal = { ...createDemoDeals(TODAY)[2], expectedCloseDate: "2026-10-01" };
-    const soon: Deal = { ...createDemoDeals(TODAY)[0], expectedCloseDate: "2026-11-10" }; // 6 days
-    const { deals, changed } = refresh(current([stale, soon]), TODAY);
+  it("removes the old fictional demo deals from browsers that saved them", () => {
+    const stored: Stored = {
+      seedVersion: 2,
+      deals: [demoDeal("demo-northwind"), demoDeal("demo-brightline"), demoDeal("demo-coastal"), seeds[0], userDeal],
+    };
+    const { deals, changed } = refresh(stored);
     expect(changed).toBe(true);
-    for (const d of deals) expect(daysBetween(TODAY, d.expectedCloseDate)!).toBeGreaterThan(7);
-  });
-
-  it("keeps a demo deal that still has time left, including the user's edits to it", () => {
-    const edited: Deal = { ...createDemoDeals(TODAY)[1], offerPrice: 99 };
-    const { deals, changed } = refresh(current([edited]), TODAY);
-    expect(changed).toBe(false);
-    expect(deals[0].offerPrice).toBe(99);
+    expect(deals.map((d) => d.id).filter((id) => id.startsWith("demo-"))).toEqual([]);
+    expect(deals.map((d) => d.id)).toContain("user-1");
+    expect(deals.map((d) => d.id)).toContain(seeds[0].id);
   });
 
   it("never touches user-added deals, even past their close date", () => {
     const overdue = { ...userDeal, expectedCloseDate: "2026-01-01" };
-    const { deals } = refresh(current([overdue]), TODAY);
-    expect(deals).toEqual([overdue]);
+    expect(refresh(current([overdue])).deals).toEqual([overdue]);
+    expect(refresh({ seedVersion: 0, deals: [overdue] }).deals).toContain(overdue);
   });
 });
 
@@ -144,7 +140,6 @@ describe("seed data", () => {
     expect(new Set(ids).size).toBe(ids.length);
     for (const d of seeds) {
       expect(isDeal(d)).toBe(true);
-      expect(d.isDemo).toBe(false);
       expect(REMOVED_SEED_IDS).not.toContain(d.id);
     }
   });

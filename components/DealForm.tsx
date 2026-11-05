@@ -60,7 +60,6 @@ export function DealForm({
   const [check, setCheck] = useState<TickerCheck>({ status: "idle", ticker: "" });
   const [suggestedBreak, setSuggestedBreak] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
-  const isDemo = deal?.isDemo ?? false;
 
   useEffect(() => {
     dialogRef.current?.showModal();
@@ -75,7 +74,7 @@ export function DealForm({
 
   async function checkTicker(): Promise<TickerCheck> {
     const ticker = fields.targetTicker.trim().toUpperCase();
-    if (isDemo || !SYMBOL_RE.test(ticker)) return { status: "idle", ticker };
+    if (!SYMBOL_RE.test(ticker)) return { status: "idle", ticker };
     if (check.ticker === ticker && check.status !== "checking") return check;
 
     setCheck({ status: "checking", ticker });
@@ -89,7 +88,7 @@ export function DealForm({
   }
 
   async function suggestBreak(ticker: string, announceDate: string, unaffectedDate: string) {
-    if (isDemo || !isValidDate(announceDate)) return;
+    if (!isValidDate(announceDate)) return;
     setSuggestedBreak(await fetchUnaffectedPrice(ticker, announceDate, isValidDate(unaffectedDate) ? unaffectedDate : undefined));
   }
 
@@ -113,7 +112,6 @@ export function DealForm({
     const sourceUrl = fields.sourceUrl.trim() || undefined;
     onSave({
       id: deal?.id ?? newId(),
-      isDemo,
       targetTicker: fields.targetTicker.trim().toUpperCase(),
       targetName: fields.targetName.trim(),
       acquirerName: fields.acquirerName.trim(),
@@ -150,14 +148,13 @@ export function DealForm({
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Target ticker" error={errors.targetTicker} hint={!isDemo ? tickerHint : null}>
+          <Field label="Target ticker" error={errors.targetTicker} hint={tickerHint}>
             <input
               value={fields.targetTicker}
               onChange={(e) => update("targetTicker", e.target.value.toUpperCase())}
               onBlur={() => void checkTicker()}
               placeholder="ABC"
               autoFocus
-              disabled={isDemo}
               className={`${inputCls} font-mono uppercase`}
             />
           </Field>

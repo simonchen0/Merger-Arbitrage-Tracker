@@ -1,4 +1,4 @@
-// Fetches live prices for real deals (demo deals never call the API):
+// Fetches live prices for the tracked deals:
 //  - latest quotes for all real tickers, re-fetched on refresh()
 //  - the unaffected price (close before announcement), the default break price
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -56,8 +56,8 @@ export function useMarketData(deals: Deal[] | null) {
   const [unaffected, setUnaffected] = useState<Record<string, number | null>>({});
   const requested = useRef(new Set<string>());
 
-  const realDeals = useMemo(() => (deals ?? []).filter((d) => !d.isDemo), [deals]);
-  const symbols = [...new Set(realDeals.map((d) => d.targetTicker))].sort().join(",");
+  const list = useMemo(() => deals ?? [], [deals]);
+  const symbols = [...new Set(list.map((d) => d.targetTicker))].sort().join(",");
   const requestKey = `${symbols}#${refreshCount}`;
 
   // Latest quotes
@@ -92,7 +92,7 @@ export function useMarketData(deals: Deal[] | null) {
 
   // Unaffected prices: fetched once per ticker + announcement/unaffected date. Fetched even when
   // a deal has a manual break price, so the detail page can show it for reference.
-  const needUnaffected = realDeals.map(unaffectedKey);
+  const needUnaffected = list.map(unaffectedKey);
   const needKey = [...new Set(needUnaffected)].sort().join(",");
 
   useEffect(() => {
@@ -115,7 +115,7 @@ export function useMarketData(deals: Deal[] | null) {
     loading: symbols !== "" && current === null,
     error: current?.error ?? null,
     lastUpdated: quoteResult?.at ?? null,
-    hasRealDeals: symbols !== "",
+    hasDeals: symbols !== "",
     refresh: () => setRefreshCount((n) => n + 1),
   };
 }

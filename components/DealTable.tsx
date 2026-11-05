@@ -6,7 +6,6 @@ import { useState } from "react";
 import type { DealRow } from "@/lib/dealRow";
 import { pct, signClass, usd } from "@/lib/format";
 import type { Deal } from "@/lib/types";
-import { Badge } from "./Badge";
 
 type SortKey =
   | "target"
@@ -165,7 +164,6 @@ export function DealTable({
                     >
                       {deal.targetTicker}
                     </Link>
-                    {deal.isDemo && <Badge kind="demo" title="Fictional deal with simulated prices" />}
                   </div>
                   <div className="max-w-[6.5rem] truncate text-xs text-muted md:max-w-none">{deal.targetName}</div>
                 </td>

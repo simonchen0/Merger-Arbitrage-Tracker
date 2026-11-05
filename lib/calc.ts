@@ -61,6 +61,14 @@ function parseDate(s: string): number | null {
   return t;
 }
 
+/** Median of the finite numbers in `values` (null, undefined, NaN and Infinity are skipped); null if none. */
+export function median(values: (number | null | undefined)[]): number | null {
+  const v = values.filter((x): x is number => typeof x === "number" && Number.isFinite(x)).sort((a, b) => a - b);
+  if (v.length === 0) return null;
+  const mid = Math.floor(v.length / 2);
+  return v.length % 2 === 1 ? v[mid] : (v[mid - 1] + v[mid]) / 2;
+}
+
 /** True for a real calendar date in strict YYYY-MM-DD form. */
 export function isValidDate(s: string): boolean {
   return parseDate(s) !== null;

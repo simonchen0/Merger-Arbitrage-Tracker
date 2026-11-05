@@ -8,11 +8,11 @@ A dashboard for tracking announced **all-cash M&A deals** the way an event-drive
 
 ## Features
 
-- **Deal dashboard.** Target, acquirer, live price, offer, spread ($ and %), annualized return, downside, break-even probability, and expected close. Sort any column, filter Real / Demo.
+- **Deal dashboard.** Target, acquirer, live price, offer, spread ($ and %), annualized return, downside, break-even probability, and expected close. Sort any column.
 - **Deal management.** Add, edit, and delete deals. Typing a ticker checks it against market data, fills in the company name, and suggests a break price.
 - **Deal analysis.** A detail page per deal with the metrics above, an editable break price that recalculates live, and a plain-English summary of the trade.
 - **Spread history.** A chart of how each deal's spread has moved since announcement, with a table of the underlying data.
-- **Real and demo data.** Five real pending deals (terms from SEC 8-K filings, each with a source link) and three clearly labeled fictional demo deals.
+- **Real deals only.** Five real pending deals (terms from SEC 8-K filings, each with a source link). Everything the tracker shows is a real deal.
 
 ![Deal detail](docs/screenshots/deal-detail.png)
 
@@ -58,7 +58,6 @@ P = current target price · O = cash offer per share · B = break price · d = c
 | Stock prices and history | Yahoo Finance (unofficial, ~15 min delayed) | "as of" time on every price |
 | Offer price, announcement date, expected close | Entered by hand from the press release or 8-K | Source link on each real deal |
 | Break price and everything derived from it | Estimate | Amber text and an **EST** badge |
-| Demo deals | Fictional companies, simulated prices | **DEMO** badge and a banner |
 
 Companies guide closing as a window ("Q1 2027"). The seeded deals use the **end** of the window, which never overstates annualized return.
 
@@ -81,7 +80,7 @@ These are a snapshot, not a live deal feed. Deal terms change (offer increases, 
 - **All-cash deals only.** No stock or mixed consideration, and no contingent value rights.
 - **Yahoo Finance is unofficial.** It can change or rate-limit without notice. If a price fails to load, the app says so and keeps the last prices it had.
 - **Closed deals disappear.** Targets are delisted when a deal closes and lose their price history, so remove a deal once it closes.
-- **Deals are saved per browser.** They aren't shared across devices. "Reset to sample data" restores the seed list.
+- **Deals are saved per browser.** They aren't shared across devices. "Reset to the starting deals" restores the seeded list.
 
 ## Getting started
 
@@ -110,7 +109,6 @@ lib/
   dealRow.ts               Deal + market data → what the UI shows
   deals.ts                 localStorage store (versioned seed data)
   validate.ts              Add/edit form validation
-  demo.ts                  Demo deals and simulated prices
   useMarketData.ts         Client hook for live prices
 components/                DealTable, DealDetail, DealForm, SpreadChart, Badge
 data/seed-deals.json       Real deals seeded on first visit

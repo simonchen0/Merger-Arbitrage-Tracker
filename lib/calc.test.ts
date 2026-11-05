@@ -6,6 +6,7 @@ import {
   daysBetween,
   downside,
   isValidDate,
+  median,
   spread,
   spreadHistory,
   todayInNewYork,
@@ -223,6 +224,38 @@ describe("spreadHistory", () => {
     const result = spreadHistory(messy, 50, "2026-03-09");
     expect(result.map((r) => r.date)).toEqual(["2026-03-11", "2026-03-12"]);
     expect(result[1].spreadPct).toBeCloseTo(-1 / 51, 10);
+  });
+});
+
+describe("median", () => {
+  it("returns the middle value for an odd count", () => {
+    expect(median([3, 1, 2])).toBe(2);
+    expect(median([5])).toBe(5);
+  });
+
+  it("averages the two middle values for an even count", () => {
+    expect(median([4, 1, 3, 2])).toBeCloseTo(2.5, 10);
+    expect(median([0.0251, 0.0299])).toBeCloseTo(0.0275, 10);
+  });
+
+  it("handles negatives and duplicates", () => {
+    expect(median([-0.1, 0.2, -0.3])).toBeCloseTo(-0.1, 10);
+    expect(median([2, 2, 2, 9])).toBe(2);
+  });
+
+  it("ignores missing and non-finite values", () => {
+    expect(median([null, 1, undefined, 3, NaN, Infinity, 2])).toBe(2);
+  });
+
+  it("returns null when there is nothing to take a median of", () => {
+    expect(median([])).toBeNull();
+    expect(median([null, undefined, NaN])).toBeNull();
+  });
+
+  it("does not change its input", () => {
+    const input = [3, 1, 2];
+    median(input);
+    expect(input).toEqual([3, 1, 2]);
   });
 });
 

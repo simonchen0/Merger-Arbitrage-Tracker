@@ -1,6 +1,5 @@
 export type Deal = {
   id: string;
-  isDemo: boolean;
   targetName: string;
   targetTicker: string;
   acquirerName: string;

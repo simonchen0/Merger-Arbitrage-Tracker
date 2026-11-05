@@ -1,7 +1,6 @@
 [
   {
     "id": "ptc-schneider",
-    "isDemo": false,
     "targetName": "PTC Inc.",
     "targetTicker": "PTC",
     "acquirerName": "Schneider Electric",
@@ -12,7 +11,6 @@
   },
   {
     "id": "vrns-proofpoint",
-    "isDemo": false,
     "targetName": "Varonis Systems",
     "targetTicker": "VRNS",
     "acquirerName": "Proofpoint (Thoma Bravo)",
@@ -24,7 +22,6 @@
   },
   {
     "id": "adt-thrive",
-    "isDemo": false,
     "targetName": "ADT Inc.",
     "targetTicker": "ADT",
     "acquirerName": "Thrive Holdings",
@@ -36,7 +33,6 @@
   },
   {
     "id": "ccc-gtcr",
-    "isDemo": false,
     "targetName": "CCC Intelligent Solutions",
     "targetTicker": "CCC",
     "acquirerName": "GTCR and Elliott",
@@ -48,7 +44,6 @@
   },
   {
     "id": "pcrx-viatris",
-    "isDemo": false,
     "targetName": "Pacira BioSciences",
     "targetTicker": "PCRX",
     "acquirerName": "Viatris",

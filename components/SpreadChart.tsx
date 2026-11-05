@@ -54,7 +54,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { paylo
   );
 }
 
-export function SpreadChart({ points, isDemo }: { points: SpreadPoint[]; isDemo: boolean }) {
+export function SpreadChart({ points }: { points: SpreadPoint[] }) {
   if (points.length < 2) {
     return <p className="py-10 text-center text-sm text-muted">Not enough trading days since the announcement to chart yet.</p>;
   }
@@ -68,7 +68,7 @@ export function SpreadChart({ points, isDemo }: { points: SpreadPoint[]; isDemo:
     <div className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="text-xs text-muted">
-          (Offer − close) / close, daily since announcement · {isDemo ? "simulated prices" : "Yahoo Finance daily closes"}
+          (Offer − close) / close, daily since announcement · Yahoo Finance daily closes
         </div>
         <div className="text-xs text-muted">
           Latest <span className="num text-sm text-text">{pct(last.spreadPct)}</span> on {shortDate(last.date)}
