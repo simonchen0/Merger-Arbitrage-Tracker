@@ -5,14 +5,24 @@
 // re-renders every subscriber. No state library needed.
 import { useSyncExternalStore } from "react";
 import seedDeals from "@/data/seed-deals.json";
-import { todayInNewYork } from "./calc";
+import { daysBetween, todayInNewYork } from "./calc";
 import { createDemoDeals } from "./demo";
 import type { Deal } from "./types";
 
-const STORAGE_KEY = "merger-arb-deals-v1";
+const STORAGE_KEY = "merger-arb-deals-v2";
+const LEGACY_STORAGE_KEY = "merger-arb-deals-v1"; // plain array, before seed versions
+
+/** Bump when data/seed-deals.json changes, so returning visitors pick the changes up. */
+const SEED_VERSION = 1;
+
+/** A demo deal this close to its expected close date (or past it) gets fresh dates. */
+const DEMO_REFRESH_DAYS = 7;
+
+type Stored = { seedVersion: number; deals: Deal[] };
 
 let cache: Deal[] | null = null;
 const listeners = new Set<() => void>();
+let storageBound = false;
 
 function seed(): Deal[] {
   return [...(seedDeals as Deal[]), ...createDemoDeals(todayInNewYork())];
@@ -34,25 +44,72 @@ function isDeal(x: unknown): x is Deal {
   );
 }
 
-function load(): Deal[] {
+function readStored(): Stored | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Keep the valid deals and drop the rest.
-      if (Array.isArray(parsed)) return parsed.filter(isDeal);
+      if (parsed && Array.isArray(parsed.deals) && typeof parsed.seedVersion === "number") {
+        // Keep the valid deals and drop the rest.
+        return { seedVersion: parsed.seedVersion, deals: parsed.deals.filter(isDeal) };
+      }
+    }
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      const parsed = JSON.parse(legacy);
+      if (Array.isArray(parsed)) return { seedVersion: 0, deals: parsed.filter(isDeal) };
     }
   } catch {
     // Unreadable or corrupt storage: fall through to the seed data.
   }
-  const deals = seed();
-  persist(deals);
+  return null;
+}
+
+/**
+ * Brings stored deals up to date without touching the user's own changes:
+ *  - a newer seed version adds/replaces the seeded real deals (by id); user-added deals stay
+ *  - demo deals about to pass their close date get regenerated dates, so the demo never reads "past expected close"
+ */
+function refresh(stored: Stored): { deals: Deal[]; changed: boolean } {
+  let deals = stored.deals;
+  let changed = stored.seedVersion !== SEED_VERSION;
+
+  if (stored.seedVersion < SEED_VERSION) {
+    const fresh = seedDeals as Deal[];
+    const freshIds = new Set(fresh.map((d) => d.id));
+    deals = [...deals.filter((d) => !freshIds.has(d.id)), ...fresh];
+  }
+
+  const today = todayInNewYork();
+  const freshDemos = new Map(createDemoDeals(today).map((d) => [d.id, d]));
+  deals = deals.map((d) => {
+    const fresh = d.isDemo ? freshDemos.get(d.id) : undefined;
+    if (!fresh) return d;
+    const left = daysBetween(today, d.expectedCloseDate);
+    if (left !== null && left > DEMO_REFRESH_DAYS) return d;
+    changed = true;
+    return fresh;
+  });
+
+  return { deals, changed };
+}
+
+function load(): Deal[] {
+  const stored = readStored();
+  if (!stored) {
+    const deals = seed();
+    persist(deals);
+    return deals;
+  }
+  const { deals, changed } = refresh(stored);
+  if (changed) persist(deals);
   return deals;
 }
 
 function persist(deals: Deal[]): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(deals));
+    const stored: Stored = { seedVersion: SEED_VERSION, deals };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
   } catch {
     // Storage blocked (e.g. private mode): the app still works for this session.
   }
@@ -86,6 +143,15 @@ export function deleteDeal(id: string): void {
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);
+  // Another tab changed the stored list: drop our copy so we don't overwrite its changes later.
+  if (!storageBound) {
+    storageBound = true;
+    window.addEventListener("storage", (e) => {
+      if (e.key !== null && e.key !== STORAGE_KEY) return;
+      cache = null;
+      listeners.forEach((l) => l());
+    });
+  }
   return () => listeners.delete(listener);
 }
 

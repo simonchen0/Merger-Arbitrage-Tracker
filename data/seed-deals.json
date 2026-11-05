@@ -56,16 +56,5 @@
     "announceDate": "2026-10-08",
     "expectedCloseDate": "2026-12-31",
     "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001396814/000110465926114571/tm2627240d2_ex99-1.htm"
-  },
-  {
-    "id": "mg-hig",
-    "isDemo": false,
-    "targetName": "MISTRAS Group",
-    "targetTicker": "MG",
-    "acquirerName": "H.I.G. Capital",
-    "offerPrice": 20.35,
-    "announceDate": "2026-09-18",
-    "expectedCloseDate": "2027-03-31",
-    "sourceUrl": "https://www.sec.gov/Archives/edgar/data/0001436126/000114036126037107/ef20082419_ex99-1.htm"
   }
 ]

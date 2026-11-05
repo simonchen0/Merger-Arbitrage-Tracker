@@ -21,13 +21,13 @@ app/api/quotes/route.ts    Latest prices for a list of tickers
 app/api/history/route.ts   Daily closes for one ticker
 lib/types.ts               Deal type
 lib/calc.ts                ALL financial math (pure functions) + calc.test.ts
-lib/deals.ts               localStorage store: useDeals() hook, setDeals(), resetDeals()
-lib/demo.ts                Demo deals (dates relative to first visit) + deterministic fake prices
+lib/deals.ts               localStorage store (v2 key, seedVersion): useDeals() hook, setDeals(), resetDeals(); syncs across tabs; refreshes demo deals nearing close
+lib/demo.ts                Demo deals (dates relative to when generated) + deterministic fake prices
 lib/dealRow.ts             buildRow(): deal + market data → price, break price, metrics (table + detail)
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
 lib/useMarketData.ts       Client hook: live quotes + unaffected prices for real deals, refresh()
 components/                DealTable, DealDetail, DealForm, SpreadChart, Badge
-data/seed-deals.json       Real deals seeded on first visit (existing browsers keep their stored list: use "Reset to sample data" to pick up seed changes). Terms come from SEC 8-K exhibits; expected close = end of the company-guided window.
+data/seed-deals.json       Real deals seeded on first visit. When you change this file, bump SEED_VERSION in lib/deals.ts so returning visitors get the changes (user-added deals are kept). Terms come from SEC 8-K exhibits; expected close = end of the company-guided window.
 scripts/check-data.ts      Manual Yahoo data check
 ```
 
@@ -65,3 +65,9 @@ Rules:
   - `npm run lint` and `npm run build` must be clean
   - `npm run dev` and check the affected page or route in the browser (or with `curl` for API routes)
 - Don't commit unless asked.
+
+## Status (update at the end of each phase)
+- Phases 0-10 are done and pushed. After the Phase 10 code review, the three main findings plus the small ones were fixed (uncommitted until the owner says so): demo deals refresh and a seed version updates returning visitors; saved deals sync across tabs; `/api/history` rejects future dates and ranges over 5 years; `crypto.randomUUID` fallback; failed unaffected-price lookups retry on Refresh; `sourceUrl` re-checked when rendered; `engines` added.
+- Not done from the review: tests for form validation, the `isDeal` guard and key parsing (Vitest can't import `deals.ts` without a `@/` alias).
+- MISTRAS (MG) was dropped from the seed deals: its filing gives no unaffected date, so its downside would have been understated.
+- Next: Phase 11 (deploy to Vercel; plan is in `~/.claude/plans/`). Needs the owner's Vercel account. The one unverified risk is Yahoo Finance blocking Vercel's servers; the fallback is a Tiingo free key (not built).

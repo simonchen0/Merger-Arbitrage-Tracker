@@ -10,7 +10,7 @@ A dashboard for tracking announced **all-cash M&A deals** the way an event-drive
 - **Deal management.** Add, edit, and delete deals. Typing a ticker checks it against market data, fills in the company name, and suggests a break price.
 - **Deal analysis.** A detail page per deal with the metrics above, an editable break price that recalculates live, and a plain-English summary of the trade.
 - **Spread history.** A chart of how each deal's spread has moved since announcement, with a table of the underlying data.
-- **Real and demo data.** Six real pending deals (terms from SEC 8-K filings, each with a source link) and three clearly labeled fictional demo deals.
+- **Real and demo data.** Five real pending deals (terms from SEC 8-K filings, each with a source link) and three clearly labeled fictional demo deals.
 
 ![Deal detail](docs/screenshots/deal-detail.png)
 
@@ -69,7 +69,6 @@ Companies guide closing as a window ("Q1 2027"). The seeded deals use the **end*
 | ADT (ADT) | Thrive Holdings | $10.00 | Oct 29, 2026 |
 | CCC Intelligent Solutions (CCC) | GTCR and Elliott | $7.75 | Oct 15, 2026 |
 | Pacira BioSciences (PCRX) | Viatris | $36.50 | Oct 8, 2026 |
-| MISTRAS Group (MG) | H.I.G. Capital | $20.35 | Sep 18, 2026 |
 
 These are a snapshot, not a live deal feed. Deal terms change (offer increases, extended timelines) and nothing here updates them. Check the linked filing before relying on a number.
 

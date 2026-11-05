@@ -95,11 +95,13 @@ export function useMarketData(deals: Deal[] | null) {
       if (requested.current.has(key)) continue;
       requested.current.add(key);
       const [ticker, announceDate, unaffectedDate] = key.split("|");
-      fetchUnaffectedPrice(ticker, announceDate, unaffectedDate || undefined).then((price) =>
-        setUnaffected((prev) => ({ ...prev, [key]: price })),
-      );
+      fetchUnaffectedPrice(ticker, announceDate, unaffectedDate || undefined).then((price) => {
+        // A failed lookup isn't remembered: the next Refresh tries again.
+        if (price === null) requested.current.delete(key);
+        setUnaffected((prev) => ({ ...prev, [key]: price }));
+      });
     }
-  }, [needKey]);
+  }, [needKey, refreshCount]);
 
   const current = quoteResult?.key === requestKey ? quoteResult : null;
   return {

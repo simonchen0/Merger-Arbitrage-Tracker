@@ -7,6 +7,7 @@ import { daysBetween, todayInNewYork, type PricePoint } from "@/lib/calc";
 const yf = new YahooFinance({ suppressNotices: ["yahooSurvey"] });
 
 const SYMBOL_RE = /^[A-Z0-9.\-^=]{1,15}$/;
+const MAX_HISTORY_DAYS = 5 * 366;
 
 async function fetchHistory(symbol: string, from: string): Promise<PricePoint[] | null> {
   "use cache";
@@ -35,8 +36,17 @@ export async function GET(request: Request) {
   if (!SYMBOL_RE.test(symbol)) {
     return Response.json({ error: "Provide a valid ?symbol=" }, { status: 400 });
   }
-  if (daysBetween(from, todayInNewYork()) === null) {
+  const today = todayInNewYork();
+  const age = daysBetween(from, today); // days from `from` to today
+  if (age === null) {
     return Response.json({ error: "Provide ?from=YYYY-MM-DD" }, { status: 400 });
+  }
+  // Bound the range: deals are recent, and an open-ended `from` makes this an open Yahoo proxy.
+  if (age < 0) {
+    return Response.json({ error: "?from can't be in the future" }, { status: 400 });
+  }
+  if (age > MAX_HISTORY_DAYS) {
+    return Response.json({ error: "?from can be at most 5 years back" }, { status: 400 });
   }
 
   try {

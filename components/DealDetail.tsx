@@ -164,7 +164,8 @@ export function DealDetail({ id }: { id: string }) {
         <Term
           label="Source"
           value={
-            deal.sourceUrl ? (
+            // Only http(s) links are rendered, whatever is in storage.
+            deal.sourceUrl && /^https?:\/\//i.test(deal.sourceUrl) ? (
               <a href={deal.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
                 Announcement ↗
               </a>

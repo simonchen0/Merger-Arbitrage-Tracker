@@ -25,6 +25,13 @@ type TickerCheck =
 
 const SYMBOL_RE = /^[A-Z0-9.\-^=]{1,15}$/;
 
+// crypto.randomUUID only exists on HTTPS/localhost pages (e.g. not the dev server's LAN address).
+function newId(): string {
+  return typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `deal-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function toFields(deal: Deal | null): Fields {
   return {
     targetTicker: deal?.targetTicker ?? "",
@@ -151,7 +158,7 @@ export function DealForm({
     const unaffectedDate = fields.unaffectedDate.trim() || undefined;
     const sourceUrl = fields.sourceUrl.trim() || undefined;
     onSave({
-      id: deal?.id ?? crypto.randomUUID(),
+      id: deal?.id ?? newId(),
       isDemo,
       targetTicker: fields.targetTicker.trim().toUpperCase(),
       targetName: fields.targetName.trim(),
