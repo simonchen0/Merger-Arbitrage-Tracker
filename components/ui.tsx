@@ -72,3 +72,30 @@ export function TrashIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+export function CloseIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" className={className}>
+      <path d="m5.5 5.5 9 9M14.5 5.5l-9 9" />
+    </svg>
+  );
+}
+
+/** One look for every "nothing here" screen: no deals, deal not found, 404, error. */
+export function EmptyState({
+  title,
+  children,
+  actions,
+}: {
+  title: string;
+  children?: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div className={cardClass("px-6 py-14 text-center")}>
+      <h2 className="text-lg font-semibold">{title}</h2>
+      {children && <p className="mx-auto mt-1.5 max-w-md text-sm text-muted">{children}</p>}
+      {actions && <div className="mt-5 flex flex-wrap items-center justify-center gap-3">{actions}</div>}
+    </div>
+  );
+}

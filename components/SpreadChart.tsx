@@ -1,11 +1,12 @@
 "use client";
 
-import { CartesianGrid, Line, LineChart, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, CartesianGrid, ReferenceLine, Tooltip, XAxis, YAxis } from "recharts";
 import type { SpreadPoint } from "@/lib/calc";
 import { pct, usd } from "@/lib/format";
 
 // Chart colors follow the app theme (app/globals.css). Single series, so no legend:
-// the section title names it. Grid and axes are recessive solid hairlines.
+// the section title names it. Grid and axes are recessive solid hairlines, and the line gets
+// a soft wash of the same color that fades toward the zero line.
 const LINE = "var(--accent)";
 const GRID = "var(--border)";
 const AXIS_TEXT = "var(--muted)";
@@ -45,7 +46,7 @@ function ChartTooltip({ active, payload }: { active?: boolean; payload?: { paylo
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
-    <div className="rounded-xl border border-border bg-bg px-3 py-2 text-xs shadow-lg">
+    <div className="rounded-xl border border-border bg-panel-2 px-3 py-2 text-xs shadow-lg shadow-black/40">
       {/* Value leads, label follows */}
       <div className="num text-sm font-semibold text-text">{pct(p.spreadPct)}</div>
       <div className="text-muted">spread · close {usd(p.close)}</div>
@@ -75,13 +76,19 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
         </div>
       </div>
 
-      <LineChart
+      <AreaChart
         responsive
         data={points}
         margin={{ top: 8, right: 12, bottom: 0, left: 0 }}
         style={{ width: "100%", height: 280 }}
         accessibilityLayer
       >
+        <defs>
+          <linearGradient id="spread-wash" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={LINE} stopOpacity={0.2} />
+            <stop offset="100%" stopColor={LINE} stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid vertical={false} stroke={GRID} strokeWidth={1} />
         <XAxis
           dataKey="date"
@@ -103,13 +110,15 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
         />
         <ReferenceLine y={0} stroke={ZERO} strokeWidth={1} />
         <Tooltip content={<ChartTooltip />} cursor={{ stroke: AXIS_TEXT, strokeWidth: 1 }} isAnimationActive={false} />
-        <Line
+        <Area
           type="linear"
           dataKey="spreadPct"
+          baseValue={0}
           stroke={LINE}
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="round"
+          fill="url(#spread-wash)"
           isAnimationActive={false}
           // Mark only the latest point; the header carries its value.
           dot={(props: { cx?: number; cy?: number; index?: number }) =>
@@ -121,14 +130,19 @@ export function SpreadChart({ points }: { points: SpreadPoint[] }) {
           }
           activeDot={{ r: 4, fill: LINE, stroke: "var(--panel)", strokeWidth: 2 }}
         />
-      </LineChart>
+      </AreaChart>
 
       {/* Table view: every value is reachable without hovering */}
-      <details className="text-xs">
-        <summary className="cursor-pointer text-muted hover:text-text">View data ({points.length} days)</summary>
+      <details className="group text-xs">
+        <summary className="inline-flex cursor-pointer list-none items-center gap-1.5 text-muted transition-colors hover:text-text [&::-webkit-details-marker]:hidden">
+          <svg aria-hidden viewBox="0 0 8 12" className="h-3 w-2 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m2 2 4 4-4 4" />
+          </svg>
+          View data ({points.length} days)
+        </summary>
         <div className="mt-2 max-h-64 overflow-y-auto rounded-xl border border-border">
           <table className="w-full">
-            <thead className="sticky top-0 bg-panel text-muted">
+            <thead className="sticky top-0 bg-panel text-[11px] uppercase tracking-wider text-muted">
               <tr>
                 <th className="px-3 py-1.5 text-left font-medium">Date</th>
                 <th className="px-3 py-1.5 text-right font-medium">Close</th>

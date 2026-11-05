@@ -13,7 +13,7 @@ import { Badge } from "./Badge";
 import { DealForm } from "./DealForm";
 import { PayoffLadder } from "./PayoffLadder";
 import { SpreadChart } from "./SpreadChart";
-import { buttonClass, cardClass, Monogram, PencilIcon, TrashIcon } from "./ui";
+import { buttonClass, cardClass, EmptyState, Monogram, PencilIcon, TrashIcon } from "./ui";
 
 export function DealDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -43,12 +43,16 @@ export function DealDetail({ id }: { id: string }) {
   if (deals === null) return <p className="text-sm text-muted">Loading…</p>;
   if (!deal) {
     return (
-      <div className="space-y-3">
-        <p className="text-sm text-muted">This deal doesn&apos;t exist. It may have been deleted.</p>
-        <Link href="/" className="text-sm text-accent hover:underline">
-          ← All deals
-        </Link>
-      </div>
+      <EmptyState
+        title="Deal not found"
+        actions={
+          <Link href="/" className={buttonClass("primary", "md")}>
+            Back to deals
+          </Link>
+        }
+      >
+        This deal doesn&apos;t exist. It may have been deleted.
+      </EmptyState>
     );
   }
 

@@ -4,12 +4,26 @@ import { useMemo, useState } from "react";
 import { DealForm } from "@/components/DealForm";
 import { DealTable } from "@/components/DealTable";
 import { SummaryStrip } from "@/components/SummaryStrip";
-import { buttonClass } from "@/components/ui";
+import { buttonClass, cardClass, EmptyState } from "@/components/ui";
 import { todayInNewYork } from "@/lib/calc";
 import { buildRow, summarize } from "@/lib/dealRow";
 import { deleteDeal, resetDeals, saveDeal, useDeals } from "@/lib/deals";
 import type { Deal } from "@/lib/types";
 import { useMarketData } from "@/lib/useMarketData";
+
+/** Placeholder shown for the instant before saved deals load, so the page doesn't jump. */
+function Skeleton() {
+  return (
+    <div aria-hidden className="animate-pulse space-y-6">
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className={cardClass("h-[108px]")} />
+        ))}
+      </div>
+      <div className={cardClass("h-72")} />
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const deals = useDeals();
@@ -57,7 +71,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {summary && <SummaryStrip summary={summary} loading={loading} />}
+      {summary && summary.dealCount > 0 && <SummaryStrip summary={summary} loading={loading} />}
 
       {market.error && (
         <p className="rounded-xl border border-down/40 bg-down/10 px-3 py-2 text-sm text-down">
@@ -66,19 +80,23 @@ export default function Dashboard() {
       )}
 
       {rows === null ? (
-        <p className="text-sm text-muted">Loading…</p>
+        <Skeleton />
       ) : rows.length === 0 ? (
-        <div className="space-y-3 rounded-2xl border border-border bg-panel px-3 py-10 text-center text-sm text-muted">
-          <p>No deals tracked yet.</p>
-          <div className="flex justify-center gap-4 text-xs">
-            <button onClick={() => setEditing("new")} className="text-accent hover:underline">
-              + Add a deal
-            </button>
-            <button onClick={resetDeals} className="text-accent hover:underline">
-              Load the starting deals
-            </button>
-          </div>
-        </div>
+        <EmptyState
+          title="No deals tracked yet"
+          actions={
+            <>
+              <button onClick={() => setEditing("new")} className={buttonClass("primary", "md")}>
+                + Add a deal
+              </button>
+              <button onClick={resetDeals} className={buttonClass("secondary", "md")}>
+                Load the starting deals
+              </button>
+            </>
+          }
+        >
+          Add an announced all-cash deal to track its spread, or load the starting deals to see how it works.
+        </EmptyState>
       ) : (
         <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
       )}

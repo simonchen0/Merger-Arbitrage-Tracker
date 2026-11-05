@@ -6,7 +6,7 @@ import { usd } from "@/lib/format";
 import type { Deal, Quote } from "@/lib/types";
 import { SYMBOL_RE, validateDeal, type Errors, type Fields } from "@/lib/validate";
 import { fetchUnaffectedPrice } from "@/lib/useMarketData";
-import { buttonClass } from "./ui";
+import { buttonClass, CloseIcon } from "./ui";
 
 type TickerCheck =
   | { status: "idle" | "checking" | "missing" | "error"; ticker: string }
@@ -139,12 +139,22 @@ export function DealForm({
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="m-auto w-[min(640px,calc(100vw-2rem))] rounded-2xl border border-border bg-panel p-0 text-text backdrop:bg-black/70"
+      className="dialog-in m-auto w-[min(640px,calc(100vw-2rem))] rounded-2xl border border-border bg-panel p-0 text-text shadow-2xl shadow-black/60 backdrop:bg-black/70 backdrop:backdrop-blur-sm"
     >
       <form onSubmit={handleSubmit} noValidate className="space-y-5 p-5">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-base font-semibold">{deal ? "Edit deal" : "Add deal"}</h2>
-          <span className="hidden text-xs text-muted sm:inline">All-cash deals · terms from the press release or 8-K</span>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold">{deal ? "Edit deal" : "Add deal"}</h2>
+            <p className="mt-0.5 text-xs text-muted">All-cash deals · terms from the press release or 8-K</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition-colors hover:bg-panel-2 hover:text-text"
+          >
+            <CloseIcon className="h-4 w-4" />
+          </button>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -233,7 +243,7 @@ export function DealForm({
 }
 
 const inputCls =
-  "w-full rounded-lg border border-border bg-panel-2 px-3 py-2 text-sm outline-none transition-colors focus:border-accent disabled:opacity-60 [color-scheme:dark]";
+  "w-full rounded-lg border border-border bg-panel-2 px-3 py-2 text-sm outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:opacity-60 [color-scheme:dark]";
 
 function Field({
   label,
@@ -247,9 +257,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="block space-y-1">
-      <span className="text-xs text-muted">{label}</span>
-      {children}
+    <label className="block space-y-1.5">
+      <span className="text-[11px] font-medium uppercase tracking-wider text-muted">{label}</span>
+      {/* A field with an error gets a red border, whatever input it holds. */}
+      <div className={error ? "[&_input]:border-down" : ""}>{children}</div>
       {error ? (
         <span className="block text-xs text-down">{error}</span>
       ) : hint ? (
