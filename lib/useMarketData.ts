@@ -6,7 +6,14 @@ import { unaffectedPrice, type PricePoint } from "./calc";
 import type { Deal, Quote } from "./types";
 
 // `at` is the time of the last successful fetch.
-type QuoteResult = { key: string; quotes: Record<string, Quote>; error: string | null; at: Date | null };
+// `missing` = tickers Yahoo no longer lists, from a successful response only (empty after an error).
+type QuoteResult = {
+  key: string;
+  quotes: Record<string, Quote>;
+  missing: string[];
+  error: string | null;
+  at: Date | null;
+};
 
 function shiftDate(date: string, days: number): string {
   const t = Date.parse(`${date}T00:00:00Z`) + days * 86_400_000;
@@ -72,12 +79,12 @@ export function useMarketData(deals: Deal[] | null, extraTickers: string[] = [])
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) throw new Error(body.error ?? "Price data unavailable");
-        return body.quotes as Quote[];
+        return { list: body.quotes as Quote[], missing: (body.missing ?? []) as string[] };
       })
-      .then((list) => {
+      .then(({ list, missing }) => {
         if (cancelled) return;
         const quotes = Object.fromEntries(list.map((q) => [q.symbol, q]));
-        setQuoteResult({ key: requestKey, quotes, error: null, at: new Date() });
+        setQuoteResult({ key: requestKey, quotes, missing, error: null, at: new Date() });
       })
       .catch((err: Error) => {
         if (cancelled) return;
@@ -85,6 +92,7 @@ export function useMarketData(deals: Deal[] | null, extraTickers: string[] = [])
         setQuoteResult((prev) => ({
           key: requestKey,
           quotes: prev?.quotes ?? {},
+          missing: [],
           error: err.message,
           at: prev?.at ?? null,
         }));
@@ -115,6 +123,7 @@ export function useMarketData(deals: Deal[] | null, extraTickers: string[] = [])
   const current = quoteResult?.key === requestKey ? quoteResult : null;
   return {
     quotes: quoteResult?.quotes ?? {},
+    missing: current && !current.error ? current.missing : [],
     unaffected,
     loading: symbols !== "" && current === null,
     error: current?.error ?? null,

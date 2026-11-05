@@ -13,6 +13,7 @@ import { buildRow, buildRumourRow, sharedPriceNote, summarize } from "@/lib/deal
 import { deleteDeal, resetDeals, saveDeal, useDeals } from "@/lib/deals";
 import { deleteRumour, saveRumour, useRumours } from "@/lib/rumours";
 import type { Deal, Rumour } from "@/lib/types";
+import { useClosedDeals } from "@/lib/useClosedDeals";
 import { useMarketData } from "@/lib/useMarketData";
 import { useRumourScan } from "@/lib/useRumourScan";
 
@@ -36,6 +37,7 @@ export default function Dashboard() {
   const rumourTickers = useMemo(() => (rumours ?? []).map((r) => r.targetTicker), [rumours]);
   const market = useMarketData(deals, rumourTickers);
   const announcedTickers = useMemo(() => (deals ?? []).map((d) => d.targetTicker), [deals]);
+  const closedDeals = useClosedDeals(deals, market.missing, market.lastUpdated);
   const rumourScan = useRumourScan(deals !== null && rumours !== null, announcedTickers);
   const [editing, setEditing] = useState<Deal | "new" | null>(null);
   const [editingRumour, setEditingRumour] = useState<Rumour | "new" | null>(null);
@@ -92,6 +94,22 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {closedDeals.removed.length > 0 && (
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-border bg-panel px-3 py-2 text-sm">
+          <ul className="space-y-0.5">
+            {closedDeals.removed.map((d) => (
+              <li key={d.id}>
+                <span className="font-mono font-semibold">{d.targetTicker}</span> is no longer listed (the deal has likely
+                closed), so it was removed.
+              </li>
+            ))}
+          </ul>
+          <button onClick={closedDeals.dismiss} className="shrink-0 text-muted transition-colors hover:text-text">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {summary && summary.dealCount > 0 && <SummaryStrip summary={summary} />}
 

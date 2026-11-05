@@ -12,7 +12,8 @@ A dashboard for tracking announced **all-cash M&A deals** the way an event-drive
 - **Deal management.** Add, edit, and delete deals. Typing a ticker checks it against market data, fills in the company name, and suggests a break price.
 - **Deal analysis.** A detail page per deal with the metrics above, an editable break price that recalculates live, and a plain-English summary of the trade.
 - **Spread history.** A chart of how each deal's spread has moved since announcement, with a table of the underlying data.
-- **Real deals only.** Five real pending deals (terms from SEC 8-K filings, each with a source link). Everything the tracker shows is a real deal.
+- **Real deals only.** Twelve real pending all-cash deals (terms from SEC filings, each with a source link). Everything the tracker shows is a real deal.
+- **Stays current.** Closed deals are removed automatically; new deals are added by a reviewed update (see [Keeping the deals current](#keeping-the-deals-current)).
 - **Rumoured deals.** A separate section for deals reported by the press but not yet announced, each linked to the original report. Spreads from reported prices are marked as indicative. See [Rumoured deals](#rumoured-deals).
 
 ![Deal detail](docs/screenshots/deal-detail.png)
@@ -71,8 +72,21 @@ Companies guide closing as a window ("Q1 2027"). The seeded deals use the **end*
 | ADT (ADT) | Thrive Holdings | $10.00 | Oct 29, 2026 |
 | CCC Intelligent Solutions (CCC) | GTCR and Elliott | $7.75 | Oct 15, 2026 |
 | Pacira BioSciences (PCRX) | Viatris | $36.50 | Oct 8, 2026 |
+| Penske Automotive Group (PAG) | Penske Corporation and Mitsui & Co. | $212.00 | Oct 15, 2026 |
+| Surgery Partners (SGRY) | HealthSpan Partners | $23.50 | Oct 26, 2026 |
+| Ultralife (ULBI) | EnerSys | $16.00 | Oct 27, 2026 |
+| Baldwin Insurance Group (BWIN) | Sequence Holdings and DFO Management | $32.50 | Sep 14, 2026 |
+| Marygold Companies (MGLD) | Madison Dearborn Partners | $2.00 | Sep 25, 2026 |
+| Priority Technology (PRTH) | Investor group led by Thomas Priore | $8.05 | Sep 21, 2026 |
+| Braze (BRZE) | Salesforce | $47.50 | Oct 20, 2026 |
 
-These are a snapshot, not a live deal feed. Deal terms change (offer increases, extended timelines) and nothing here updates them. Check the linked filing before relying on a number.
+Deal terms change (offer increases, extended timelines) and nothing here tracks those. Check the linked filing before relying on a number. Braze's closing date is the end of Salesforce's fiscal year 2028 (the release says "fiscal year 2028"; the date is derived from Salesforce's January year-end, not stated in the filing).
+
+### Keeping the deals current
+
+- **Closed deals are removed automatically.** When Yahoo no longer lists a deal's ticker *and* has no price history for it, the deal is dropped and a notice says so. Two checks must agree, and if every tracked ticker goes missing at once (a Yahoo outage), nothing is removed.
+- **New deals are added by a reviewed update, not automatically.** SEC filings name buyers and targets alike, and the price, closing window and undisturbed date drive every number, so each candidate is read in full and checked against the stock's price history before it is added. The routine opens a pull request for review; nothing goes live unmerged.
+- **What gets skipped**, and is listed with a reason: stock, mixed or CVR deals, proposals only, deals with no stated closing window, amended deals with no undisturbed price, foreign listings, and deals already completed.
 
 ## Rumoured deals
 
@@ -112,7 +126,8 @@ Even with a feed, pulling terms out of headlines would mean guessing: "$5bn deal
 - **Deal terms are manual.** There's no free API for them.
 - **All-cash deals only.** No stock or mixed consideration, and no contingent value rights.
 - **Yahoo Finance is unofficial.** It can change or rate-limit without notice. If a price fails to load, the app says so and keeps the last prices it had.
-- **Closed deals disappear.** Targets are delisted when a deal closes and lose their price history, so remove a deal once it closes.
+- **Closed deals disappear.** Targets are delisted when a deal closes and lose their price history. The app detects this and removes the deal on its own; it can only react once Yahoo has delisted the ticker.
+- **Dividends aren't modelled.** A target that keeps paying a dividend until closing can trade at or above the offer (Penske Automotive does), which shows as a negative spread.
 - **Deals are saved per browser.** They aren't shared across devices. "Reset to the starting deals" restores the seeded list.
 
 ## Getting started

@@ -11,7 +11,7 @@ const STORAGE_KEY = "merger-arb-deals-v2";
 const LEGACY_STORAGE_KEY = "merger-arb-deals-v1"; // plain array, before seed versions
 
 /** Bump when data/seed-deals.json changes, so returning visitors pick the changes up. */
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 
 /**
  * Ids of seeded deals that were later removed from data/seed-deals.json. Browsers that saved
