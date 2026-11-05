@@ -21,7 +21,7 @@ export type Rumour = {
   targetTicker: string;
   targetName: string;
   acquirerName?: string; // potential acquirer, if the report names one
-  sourceUrl: string; // link to the original report, on a trusted publisher's site
+  sourceUrl: string; // link to the report, on a news site (not social media); see lib/sources.ts
   reportDate: string; // YYYY-MM-DD, when the report was published
   reportedPrice?: number; // cash per share, only if the report states one
   reportedCloseDate?: string; // YYYY-MM-DD, only if the report gives a timeframe (end of window)

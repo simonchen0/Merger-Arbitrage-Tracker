@@ -24,7 +24,7 @@ lib/validate.ts            Add/edit form validation (pure): validateDeal, valida
 lib/calc.ts                ALL financial math (pure functions, plus median, withLatestQuote, breakPriceRange, indicativeMetrics for rumours) + calc.test.ts
 lib/deals.ts               localStorage store (v2 key, seedVersion): useDeals() hook, setDeals(), resetDeals(); syncs across tabs; seed version updates and removed-deal list
 lib/rumours.ts             Rumours store (merger-arb-rumours-v1, no seed): useRumours(), saveRumour(), deleteRumour(); syncs across tabs
-lib/sources.ts             Trusted-publisher allowlist; publisherFor(url) derives the publisher from a rumour's link
+lib/sources.ts             publisherFor(url): known outlets get a short name, other news sites their own domain, social media/forums are rejected; isKnownPublisher()
 lib/dealRow.ts             buildRow(): deal + market data → price, break price, metrics (table + detail); buildRumourRow(); summarize() headline numbers (announced deals only)
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
 lib/useMarketData.ts       Client hook: live quotes (deals + extra tickers such as rumours) and unaffected prices for deals, refresh()
@@ -54,7 +54,7 @@ Rules:
 - The tracker shows real deals only: there are no demo or fictional deals (they were removed at the owner's request; don't re-add them).
 - Estimates (default break price and anything derived from it): **EST** tag in amber (`text-est`).
 - Market prices show an "as of" timestamp. Deal terms are entered manually from a press release or 8-K, with a source link.
-- Rumoured deals: never fabricate or assume terms. Each one needs a link to the original report on a trusted publisher's site (`lib/sources.ts`); the publisher is derived from the link. Anything the report doesn't state shows "Not disclosed". Numbers from reported terms are amber with an **INDICATIVE** tag, and the section carries an **UNCONFIRMED** tag. Rumours stay out of the summary strip. There are no seeded rumours: don't add any unless the owner supplies verified ones.
+- Rumoured deals: never fabricate or assume terms. Each one needs a link to a report on a news site (`lib/sources.ts`): any news site is accepted (owner's choice, not just WSJ/Bloomberg/Reuters), social media and forums are rejected, and the publisher label is always derived from the link, never typed. Anything the report doesn't state shows "Not disclosed". Numbers from reported terms are amber with an **INDICATIVE** tag, and the section carries an **UNCONFIRMED** tag. Rumours stay out of the summary strip. There are no seeded rumours: don't add any unless the owner supplies verified ones.
 - Rumours are added by hand. Automated discovery was investigated and dropped: Yahoo's news search links only to Yahoo-hosted copies (never the original reuters.com/bloomberg.com/wsj.com article), and the outlets themselves have no free API (see README).
 
 ## Conventions

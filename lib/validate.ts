@@ -1,6 +1,6 @@
 // Validation for the add/edit deal form. Pure functions, so they can be tested without React.
 import { isValidDate } from "./calc";
-import { publisherFor, TRUSTED_PUBLISHER_NAMES } from "./sources";
+import { publisherFor } from "./sources";
 
 /** Form values as typed: everything is a string until the form is submitted. */
 export type Fields = {
@@ -65,7 +65,7 @@ export type RumourFields = {
 export type RumourErrors = Partial<Record<keyof RumourFields, string>>;
 
 /**
- * Returns an error message per invalid field (empty object = valid). Only the target, a trusted
+ * Returns an error message per invalid field (empty object = valid). Only the target, a news
  * source link and the report date are required: terms a report doesn't state stay blank.
  */
 export function validateRumour(f: RumourFields, today: string): RumourErrors {
@@ -75,7 +75,7 @@ export function validateRumour(f: RumourFields, today: string): RumourErrors {
   if (!f.targetName.trim()) e.targetName = "Required";
 
   if (!f.sourceUrl.trim()) e.sourceUrl = "Required: a link to the original report";
-  else if (!publisherFor(f.sourceUrl)) e.sourceUrl = `Use a link from ${TRUSTED_PUBLISHER_NAMES}`;
+  else if (!publisherFor(f.sourceUrl)) e.sourceUrl = "Use a link to a news article (not social media or a forum)";
 
   if (!isValidDate(f.reportDate)) e.reportDate = "Enter a valid date";
   else if (f.reportDate > today) e.reportDate = "Report date can't be in the future";

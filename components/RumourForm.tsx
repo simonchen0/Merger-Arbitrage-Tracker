@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { todayInNewYork } from "@/lib/calc";
 import { usd } from "@/lib/format";
-import { publisherFor, TRUSTED_PUBLISHER_NAMES } from "@/lib/sources";
+import { isKnownPublisher, publisherFor } from "@/lib/sources";
 import type { Rumour } from "@/lib/types";
 import { SYMBOL_RE, validateRumour, type RumourErrors, type RumourFields } from "@/lib/validate";
 import { Field, inputCls, lookupTicker, newId, type TickerCheck } from "./DealForm";
@@ -104,9 +104,11 @@ export function RumourForm({
             : null;
 
   const publisher = publisherFor(fields.sourceUrl);
-  const sourceHint = publisher
-    ? { cls: "text-up", text: `✓ ${publisher}` }
-    : { cls: "text-muted", text: `Trusted publishers only: ${TRUSTED_PUBLISHER_NAMES}` };
+  const sourceHint = !publisher
+    ? { cls: "text-muted", text: "Link to the news article, not social media" }
+    : isKnownPublisher(fields.sourceUrl)
+      ? { cls: "text-up", text: `✓ ${publisher}` }
+      : { cls: "text-est", text: `${publisher}: not a major outlet, so check it's credible` };
 
   return (
     <dialog
@@ -146,7 +148,7 @@ export function RumourForm({
           </Field>
           <div className="sm:col-span-2">
             <Field label="Source link" error={errors.sourceUrl} hint={sourceHint}>
-              <input type="url" value={fields.sourceUrl} onChange={set("sourceUrl")} placeholder="https://www.reuters.com/…" className={inputCls} />
+              <input type="url" value={fields.sourceUrl} onChange={set("sourceUrl")} placeholder="https://…" className={inputCls} />
             </Field>
           </div>
           <Field label="Report date" error={errors.reportDate}>

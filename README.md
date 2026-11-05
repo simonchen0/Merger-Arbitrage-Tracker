@@ -80,7 +80,7 @@ Below the announced deals is a separate section for rumoured deals: potential ac
 
 **Accuracy rules**
 
-- **A source is required.** Every rumour links to the original report, and the link must be on a trusted publisher's site: WSJ, Bloomberg, Reuters, FT, CNBC, NYT, The Information, Dow Jones or Barron's. The publisher shown is read from the link, so the two can't disagree. Lookalike domains and syndicated copies (e.g. on Yahoo) are rejected.
+- **A source is required.** Every rumour links to the report. Any news site is accepted, since rumours surface in many outlets. Well-known outlets (WSJ, Bloomberg, Reuters, FT, CNBC and others) show their short name; any other site shows its own domain and the form notes that it isn't a major outlet, so the credibility check is yours. The publisher is always read from the link, never typed, so the label can't misstate where a report came from (a lookalike such as `reuters.com.evil.io` is labelled with its true domain). Social media, forums and chat sites (Reddit, X, StockTwits, YouTube and similar) are rejected, because a post there isn't a report.
 - **Nothing is assumed.** The potential acquirer, a per-share price and a closing timeframe are entered only if the report states them. Anything missing shows as "Not disclosed".
 - **Numbers are indicative.** If a report gives a per-share cash price, the spread is calculated against it. It's shown in amber with an **INDICATIVE** tag, because the terms are unconfirmed. Annualized return appears only when the report also gives a timeframe. There's no downside or break-even, since nothing has been agreed.
 - **No starting rumours.** Rumours go stale quickly and each one needs checking against its source, so the list starts empty.
@@ -132,7 +132,7 @@ lib/
   dealRow.ts               Deal + market data → what the UI shows
   deals.ts                 localStorage store (versioned seed data)
   rumours.ts               localStorage store for rumoured deals (no seed)
-  sources.ts               Trusted-publisher allowlist for rumour links
+  sources.ts               Labels a rumour's source link (known outlet or its domain); rejects social media
   validate.ts              Add/edit form validation
   useMarketData.ts         Client hook for live prices
   format.ts                Display formatting (money, percent, as-of time)

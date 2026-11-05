@@ -104,7 +104,7 @@ const validRumour: RumourFields = {
 const rumourErrorsFor = (changes: Partial<RumourFields>) => validateRumour({ ...validRumour, ...changes }, TODAY);
 
 describe("validateRumour", () => {
-  it("accepts a rumour with only the target, a trusted source and the report date", () => {
+  it("accepts a rumour with only the target, a news source and the report date", () => {
     expect(rumourErrorsFor({})).toEqual({});
   });
 
@@ -118,12 +118,14 @@ describe("validateRumour", () => {
     expect(rumourErrorsFor({ targetName: "  " }).targetName).toBeDefined();
   });
 
-  it("requires a source link from a trusted publisher", () => {
+  it("requires a source link to a news site, but not only the big outlets", () => {
     expect(rumourErrorsFor({ sourceUrl: "" }).sourceUrl).toMatch(/Required/);
-    expect(rumourErrorsFor({ sourceUrl: "https://www.example.com/x" }).sourceUrl).toMatch(/Reuters/);
-    expect(rumourErrorsFor({ sourceUrl: "https://finance.yahoo.com/news/x.html" }).sourceUrl).toBeDefined();
-    expect(rumourErrorsFor({ sourceUrl: "https://reuters.com.evil.io/x" }).sourceUrl).toBeDefined();
+    expect(rumourErrorsFor({ sourceUrl: "not a link" }).sourceUrl).toMatch(/news article/);
+    expect(rumourErrorsFor({ sourceUrl: "https://www.reddit.com/r/stocks/x" }).sourceUrl).toMatch(/social media/);
+    expect(rumourErrorsFor({ sourceUrl: "https://x.com/user/status/1" }).sourceUrl).toBeDefined();
     expect(rumourErrorsFor({ sourceUrl: "https://www.wsj.com/business/deals/x" }).sourceUrl).toBeUndefined();
+    expect(rumourErrorsFor({ sourceUrl: "https://www.investing.com/news/x" }).sourceUrl).toBeUndefined();
+    expect(rumourErrorsFor({ sourceUrl: "https://finance.yahoo.com/news/x.html" }).sourceUrl).toBeUndefined();
   });
 
   it("requires a valid report date that isn't in the future", () => {
