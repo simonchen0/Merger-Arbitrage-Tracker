@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import seedRumours from "@/data/seed-rumours.json";
-import { dropStale, isRumour, isSharedTicker, mergeShared, parseScanState, readStoredRumours, withDismissed } from "./rumours";
+import { isRumour, isSharedTicker, mergeShared, readStoredRumours } from "./rumours";
 import { validateRumour } from "./validate";
 import type { Rumour } from "./types";
 
@@ -70,84 +70,20 @@ describe("readStoredRumours", () => {
   });
 });
 
-describe("auto-found rumours", () => {
-  const auto: Rumour = { ...minimal, id: "auto-ABC", autoFound: true, headline: "ABC in talks to be acquired" };
+describe("rumours from the removed headline scan", () => {
+  // An earlier version added unverified "auto-found" rows. That feature is gone, and nobody had
+  // checked those rows, so they are dropped when the saved list is read.
+  const legacyAuto = { ...minimal, id: "auto-ABC", autoFound: true, headline: "ABC in talks to be acquired" };
 
-  it("isRumour accepts the auto-found fields and rejects bad ones", () => {
-    expect(isRumour(auto)).toBe(true);
-    expect(isRumour({ ...minimal, autoFound: false })).toBe(false);
-    expect(isRumour({ ...minimal, headline: 5 })).toBe(false);
+  it("drops legacy auto-found rows when loading, and keeps every other row", () => {
+    stubStorage({ "merger-arb-rumours-v1": JSON.stringify([legacyAuto, minimal]) });
+    expect(readStoredRumours()).toEqual([minimal]);
   });
 
-  it("dropStale removes auto-found rows after 30 days, and keeps newer ones", () => {
-    // 2026-10-05 → 2026-11-04 is exactly 30 days: kept. One day later: dropped.
-    const old = { ...auto, reportDate: "2026-10-05" };
-    expect(dropStale([old], "2026-11-04")).toEqual([old]);
-    expect(dropStale([old], "2026-11-05")).toEqual([]);
-  });
-
-  it("dropStale never removes rumours the user added or edited, however old", () => {
-    const manual = { ...minimal, reportDate: "2025-01-01" };
-    expect(dropStale([manual], "2026-11-05")).toEqual([manual]);
-  });
-
-  it("dropStale keeps an auto-found row whose date can't be read, rather than guessing", () => {
-    const odd = { ...auto, reportDate: "garbage" };
-    expect(dropStale([odd], "2026-11-05")).toEqual([odd]);
-  });
-
-  it("readStoredRumours drops stale auto-found rows when loading", () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-11-05T17:00:00Z"));
-    const stale = { ...auto, id: "auto-OLD", reportDate: "2026-09-01" };
-    stubStorage({ "merger-arb-rumours-v1": JSON.stringify([stale, auto, minimal]) });
-    expect(readStoredRumours().map((r) => r.id)).toEqual(["auto-ABC", "r-1"]);
-    vi.useRealTimers();
-  });
-});
-
-describe("parseScanState", () => {
-  const NOW = Date.parse("2026-11-05T17:00:00Z");
-  const DAY = 86_400_000;
-
-  it("reads a saved state", () => {
-    const dismissed = [{ ticker: "WEN", at: NOW - 2 * DAY }, { ticker: "GFL", at: NOW - 5 * DAY }];
-    expect(parseScanState(JSON.stringify({ lastScan: 1700000000000, dismissed }), NOW)).toEqual({ lastScan: 1700000000000, dismissed });
-  });
-
-  it("starts fresh for missing, corrupt or wrong-shaped data", () => {
-    const fresh = { lastScan: 0, dismissed: [] };
-    expect(parseScanState(null, NOW)).toEqual(fresh);
-    expect(parseScanState("{nope", NOW)).toEqual(fresh);
-    expect(parseScanState(JSON.stringify([1, 2]), NOW)).toEqual(fresh);
-    expect(parseScanState(JSON.stringify({ lastScan: "x", dismissed: "WEN" }), NOW)).toEqual(fresh);
-  });
-
-  it("lets a dismissal lapse after 30 days, so a new story about the company can show", () => {
-    const state = parseScanState(
-      JSON.stringify({ lastScan: 1, dismissed: [{ ticker: "OLD", at: NOW - 31 * DAY }, { ticker: "EDGE", at: NOW - 30 * DAY }] }),
-      NOW,
-    );
-    expect(state.dismissed.map((d) => d.ticker)).toEqual(["EDGE"]);
-  });
-
-  it("accepts the older format of bare ticker strings, dismissed as of now, and drops junk entries", () => {
-    const state = parseScanState(JSON.stringify({ lastScan: 1, dismissed: ["WEN", 5, null, { ticker: "X" }, { at: 1 }] }), NOW);
-    expect(state.dismissed).toEqual([{ ticker: "WEN", at: NOW }]);
-  });
-});
-
-describe("withDismissed", () => {
-  it("adds a ticker in upper case, and refreshes the date if it was already dismissed", () => {
-    const first = withDismissed({ lastScan: 5, dismissed: [] }, "wen", 100);
-    expect(first).toEqual({ lastScan: 5, dismissed: [{ ticker: "WEN", at: 100 }] });
-    expect(withDismissed(first, "WEN", 200).dismissed).toEqual([{ ticker: "WEN", at: 200 }]);
-  });
-
-  it("keeps other dismissals and doesn't change the original", () => {
-    const base = { lastScan: 0, dismissed: [{ ticker: "GFL", at: 1 }] };
-    expect(withDismissed(base, "WEN", 2).dismissed.map((d) => d.ticker)).toEqual(["GFL", "WEN"]);
-    expect(base.dismissed).toHaveLength(1);
+  it("keeps a row that was auto-found and then edited by the user (the edit cleared the flag)", () => {
+    const edited = { ...minimal, id: "auto-XYZ", acquirerName: "Buyer" };
+    stubStorage({ "merger-arb-rumours-v1": JSON.stringify([edited]) });
+    expect(readStoredRumours()).toEqual([edited]);
   });
 });
 
@@ -180,11 +116,6 @@ describe("shared rumours", () => {
     expect(mergeShared([mine], [])).toEqual([mine]);
     expect(mergeShared([], [])).toEqual([]);
   });
-
-  it("dropStale never expires shared rumours", () => {
-    const old = { ...shared, reportDate: "2024-01-01" };
-    expect(dropStale([old], "2026-11-05")).toEqual([old]);
-  });
 });
 
 describe("data/seed-rumours.json", () => {
@@ -209,13 +140,12 @@ describe("data/seed-rumours.json", () => {
     }
   });
 
-  it("has unique ids and tickers, ids prefixed shared-, and no auto-found or stored-only fields", () => {
+  it("has unique ids and tickers, ids prefixed shared-, and no stored-only fields", () => {
     expect(new Set(seeds.map((r) => r.id)).size).toBe(seeds.length);
     expect(new Set(seeds.map((r) => r.targetTicker.toUpperCase())).size).toBe(seeds.length);
     for (const r of seeds) {
       expect(r.id.startsWith("shared-"), r.id).toBe(true);
-      expect(r.autoFound, r.id).toBeUndefined();
-      expect(r.headline, r.id).toBeUndefined();
+      expect((r as Record<string, unknown>).autoFound, r.id).toBeUndefined();
       expect(r.shared, r.id).toBeUndefined();
     }
   });

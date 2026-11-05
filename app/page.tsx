@@ -15,7 +15,6 @@ import { deleteRumour, saveRumour, useRumours } from "@/lib/rumours";
 import type { Deal, Rumour } from "@/lib/types";
 import { useClosedDeals } from "@/lib/useClosedDeals";
 import { useMarketData } from "@/lib/useMarketData";
-import { useRumourScan } from "@/lib/useRumourScan";
 
 /** Placeholder shown for the instant before saved deals load, so the page doesn't jump. */
 function Skeleton() {
@@ -36,9 +35,7 @@ export default function Dashboard() {
   const rumours = useRumours();
   const rumourTickers = useMemo(() => (rumours ?? []).map((r) => r.targetTicker), [rumours]);
   const market = useMarketData(deals, rumourTickers);
-  const announcedTickers = useMemo(() => (deals ?? []).map((d) => d.targetTicker), [deals]);
   const closedDeals = useClosedDeals(deals, market.missing, market.lastUpdated);
-  const rumourScan = useRumourScan(deals !== null && rumours !== null, announcedTickers);
   const [editing, setEditing] = useState<Deal | "new" | null>(null);
   const [editingRumour, setEditingRumour] = useState<Rumour | "new" | null>(null);
   const { quotes, unaffected, loading } = market;
@@ -152,21 +149,10 @@ export default function Dashboard() {
               <span className="text-sm text-muted">{rumourRows.length} tracked</span>
               <Badge kind="rumour" title="Reported in the press, not announced by the companies" />
             </div>
-            <div className="flex items-center gap-3">
-              {rumourScan.status && <span className="text-xs text-muted">{rumourScan.status}</span>}
-              <button onClick={rumourScan.scan} disabled={rumourScan.scanning} className={buttonClass("secondary")}>
-                {rumourScan.scanning ? "Scanning…" : "Scan for rumours"}
-              </button>
-              <button onClick={() => setEditingRumour("new")} className={buttonClass("secondary")}>
-                + Add rumour
-              </button>
-            </div>
+            <button onClick={() => setEditingRumour("new")} className={buttonClass("secondary")}>
+              + Add rumour
+            </button>
           </div>
-          {rumourRows.some((r) => r.rumour.autoFound) && (
-            <p className="text-sm text-muted">
-              Auto-found rows come from a headline scan and may be wrong. Open the source to check, then edit to confirm.
-            </p>
-          )}
           {rumourRows.length === 0 ? (
             <div className={cardClass("px-5 py-6 text-center text-sm text-muted")}>
               No deals yet.

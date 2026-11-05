@@ -11,7 +11,6 @@ import { cardClass, PencilIcon, TrashIcon } from "./ui";
 
 const NOT_DISCLOSED = "Not disclosed";
 const INDICATIVE_TITLE = "Indicative: based on unconfirmed terms reported in the press";
-const AUTO_TITLE = "Found by a headline scan, not checked by a person. Open the source to verify; edit the row to confirm it.";
 
 /** Newest report first. */
 function byReportDate(rows: RumourRow[]): RumourRow[] {
@@ -119,19 +118,10 @@ export function RumourTable({
                     </div>
                   </td>
                   <td className="px-2.5 py-3.5">
-                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                    <div className="whitespace-nowrap">
                       <Source row={row} />
-                      {r.autoFound && <Badge kind="auto" title={AUTO_TITLE} />}
                     </div>
-                    <div className="num whitespace-nowrap text-xs text-muted">
-                      {r.autoFound ? "headline " : ""}
-                      {r.reportDate}
-                    </div>
-                    {r.autoFound && r.headline && (
-                      <div className="mt-0.5 max-w-[16rem] truncate text-xs text-muted" title={r.headline}>
-                        {r.headline}
-                      </div>
-                    )}
+                    <div className="num whitespace-nowrap text-xs text-muted">{r.reportDate}</div>
                   </td>
                   <td className={td}>
                     <div className="font-medium">{usd(row.price)}</div>
@@ -243,15 +233,9 @@ function RumourCard({
           </CardStat>
         </dl>
 
-        <div className="mt-3 flex flex-wrap items-center gap-x-1.5 text-xs">
-          <Source row={row} />
-          {r.autoFound && <Badge kind="auto" title={AUTO_TITLE} />}
-          <span className="num text-muted">
-            · {r.autoFound ? "headline " : ""}
-            {r.reportDate}
-          </span>
+        <div className="mt-3 text-xs">
+          <Source row={row} /> <span className="num text-muted">· {r.reportDate}</span>
         </div>
-        {r.autoFound && r.headline && <div className="mt-1 text-xs text-muted">{r.headline}</div>}
       </div>
 
       {!r.shared && (
