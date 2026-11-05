@@ -27,7 +27,7 @@ lib/demo.ts                Demo deals (dates relative to when generated) + deter
 lib/dealRow.ts             buildRow(): deal + market data → price, break price, metrics (table + detail)
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
 lib/useMarketData.ts       Client hook: live quotes + unaffected prices for real deals, refresh()
-components/                DealTable, DealDetail, DealForm, SpreadChart, Badge, StatusBar (bottom bar), ui.tsx (cardClass/buttonClass helpers, logo)
+components/                DealTable, DealDetail, DealForm, SpreadChart, Badge, StatusBar (bottom bar), ui.tsx (cardClass/buttonClass helpers)
 data/seed-deals.json       Real deals seeded on first visit. When you change this file, bump SEED_VERSION in lib/deals.ts so returning visitors get the changes (user-added deals are kept). When you delete a seed deal, also add its id to REMOVED_SEED_IDS there. Terms come from SEC 8-K exhibits; expected close = end of the company-guided window.
 scripts/check-data.ts      Manual Yahoo data check
 vitest.config.mts          Test config (adds the `@/` alias); tests sit next to the code as *.test.ts

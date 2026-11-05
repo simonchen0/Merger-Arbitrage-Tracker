@@ -31,15 +31,3 @@ const variants: Record<Variant, string> = {
 export function buttonClass(variant: Variant = "secondary", size: Size = "sm"): string {
   return `${base} ${sizes[size]} ${variants[variant]}`;
 }
-
-/** The brand mark in the header. */
-export function LogoMark() {
-  return (
-    <span
-      aria-hidden
-      className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-accent to-accent-strong font-mono text-[11px] font-bold tracking-tight text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]"
-    >
-      MA
-    </span>
-  );
-}
