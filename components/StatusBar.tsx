@@ -11,7 +11,7 @@ export function StatusBar() {
 
   return (
     <footer className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-bg/85 backdrop-blur">
-      <div className="mx-auto flex h-10 max-w-7xl items-center gap-x-5 overflow-hidden px-4 text-xs text-muted">
+      <div className="mx-auto flex h-10 max-w-[88rem] items-center gap-x-5 overflow-hidden px-4 text-xs text-muted">
         <span className="flex shrink-0 items-center gap-2">
           <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-up shadow-[0_0_6px_var(--up)]" />
           <span>

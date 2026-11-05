@@ -31,3 +31,42 @@ const variants: Record<Variant, string> = {
 export function buttonClass(variant: Variant = "secondary", size: Size = "sm"): string {
   return `${base} ${sizes[size]} ${variants[variant]}`;
 }
+
+/** Neutral 2-letter tile for a ticker. It carries no meaning, so it's never colored by data. */
+export function Monogram({ text }: { text: string }) {
+  return (
+    <span
+      aria-hidden
+      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-panel-2 font-mono text-[11px] font-bold tracking-tight text-accent"
+    >
+      {text.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase()}
+    </span>
+  );
+}
+
+/** Two chevrons; the one for the active sort direction is solid, the other faded. */
+export function SortIcon({ dir }: { dir: "asc" | "desc" | null }) {
+  return (
+    <svg aria-hidden viewBox="0 0 8 12" className="h-3 w-2" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 4.5 4 1.5l3 3" opacity={dir === "asc" ? 1 : 0.3} />
+      <path d="M1 7.5l3 3 3-3" opacity={dir === "desc" ? 1 : 0.3} />
+    </svg>
+  );
+}
+
+export function PencilIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="m4 16 .7-3.2L13 4.5a1.5 1.5 0 0 1 2.1 0l.4.4a1.5 1.5 0 0 1 0 2.1l-8.3 8.3L4 16Z" />
+      <path d="m12 5.5 2.5 2.5" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg aria-hidden viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M4 6h12M8 6V4.5h4V6M5.5 6l.7 9.2a1 1 0 0 0 1 .8h5.6a1 1 0 0 0 1-.8L14.5 6M8.5 9v4M11.5 9v4" />
+    </svg>
+  );
+}

@@ -80,12 +80,7 @@ export default function Dashboard() {
           </div>
         </div>
       ) : (
-        <>
-          <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
-          <p className="text-xs text-muted md:hidden">
-            Swipe the table sideways for annualized return, downside, break-even, and close date.
-          </p>
-        </>
+        <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
       )}
 
       {editing && (
