@@ -8,12 +8,12 @@ import { SYMBOL_RE, validateDeal, type Errors, type Fields } from "@/lib/validat
 import { fetchUnaffectedPrice } from "@/lib/useMarketData";
 import { buttonClass, CloseIcon } from "./ui";
 
-type TickerCheck =
+export type TickerCheck =
   | { status: "idle" | "checking" | "missing" | "error"; ticker: string }
   | { status: "ok"; ticker: string; quote: Quote };
 
 // crypto.randomUUID only exists on HTTPS/localhost pages (e.g. not the dev server's LAN address).
-function newId(): string {
+export function newId(): string {
   return typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
     : `deal-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -33,7 +33,7 @@ function toFields(deal: Deal | null): Fields {
   };
 }
 
-async function lookupTicker(ticker: string): Promise<TickerCheck> {
+export async function lookupTicker(ticker: string): Promise<TickerCheck> {
   try {
     const res = await fetch(`/api/quotes?symbols=${encodeURIComponent(ticker)}`);
     if (!res.ok) return { status: "error", ticker };
@@ -242,10 +242,10 @@ export function DealForm({
   );
 }
 
-const inputCls =
+export const inputCls =
   "w-full rounded-lg border border-border bg-panel-2 px-3 py-2 text-sm outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/25 disabled:opacity-60 [color-scheme:dark]";
 
-function Field({
+export function Field({
   label,
   error,
   hint,

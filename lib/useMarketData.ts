@@ -50,14 +50,18 @@ export function parseUnaffectedKey(key: string): { ticker: string; announceDate:
   return { ticker, announceDate, unaffectedDate: unaffectedDate || undefined };
 }
 
-export function useMarketData(deals: Deal[] | null) {
+/**
+ * `extraTickers` (e.g. rumoured deals' targets) join the same quote request, so one Refresh and
+ * one "Updated" time cover everything. They get quotes only, no unaffected price.
+ */
+export function useMarketData(deals: Deal[] | null, extraTickers: string[] = []) {
   const [refreshCount, setRefreshCount] = useState(0);
   const [quoteResult, setQuoteResult] = useState<QuoteResult | null>(null);
   const [unaffected, setUnaffected] = useState<Record<string, number | null>>({});
   const requested = useRef(new Set<string>());
 
   const list = useMemo(() => deals ?? [], [deals]);
-  const symbols = [...new Set(list.map((d) => d.targetTicker))].sort().join(",");
+  const symbols = [...new Set([...list.map((d) => d.targetTicker), ...extraTickers])].sort().join(",");
   const requestKey = `${symbols}#${refreshCount}`;
 
   // Latest quotes

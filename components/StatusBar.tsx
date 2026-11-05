@@ -1,10 +1,13 @@
 "use client";
 
 import { resetDeals } from "@/lib/deals";
+import { useRumours } from "@/lib/rumours";
 import { Badge } from "./Badge";
 
 /** Persistent bottom bar: where the data comes from, what the badges mean, and reset. */
 export function StatusBar() {
+  const hasRumours = (useRumours()?.length ?? 0) > 0;
+
   function handleReset() {
     if (confirm("Replace all deals with the starting deals? Deals you added or edited will be lost.")) resetDeals();
   }
@@ -22,6 +25,11 @@ export function StatusBar() {
         <span className="hidden shrink-0 items-center gap-2 md:flex">
           <Badge kind="est" /> uses the estimated break price
         </span>
+        {hasRumours && (
+          <span className="hidden shrink-0 items-center gap-2 lg:flex">
+            <Badge kind="ind" /> based on unconfirmed reported terms
+          </span>
+        )}
         <span className="hidden shrink-0 xl:inline">Ann. return = spread % × 365 / days to close</span>
 
         <button onClick={handleReset} className="ml-auto shrink-0 transition-colors hover:text-text">

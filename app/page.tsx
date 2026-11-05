@@ -1,14 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Badge } from "@/components/Badge";
 import { DealForm } from "@/components/DealForm";
 import { DealTable } from "@/components/DealTable";
+import { RumourForm } from "@/components/RumourForm";
+import { RumourTable } from "@/components/RumourTable";
 import { SummaryStrip } from "@/components/SummaryStrip";
 import { buttonClass, cardClass, EmptyState } from "@/components/ui";
 import { todayInNewYork } from "@/lib/calc";
-import { buildRow, summarize } from "@/lib/dealRow";
+import { buildRow, buildRumourRow, summarize } from "@/lib/dealRow";
 import { deleteDeal, resetDeals, saveDeal, useDeals } from "@/lib/deals";
-import type { Deal } from "@/lib/types";
+import { deleteRumour, saveRumour, useRumours } from "@/lib/rumours";
+import type { Deal, Rumour } from "@/lib/types";
 import { useMarketData } from "@/lib/useMarketData";
 
 /** Placeholder shown for the instant before saved deals load, so the page doesn't jump. */
@@ -27,13 +31,26 @@ function Skeleton() {
 
 export default function Dashboard() {
   const deals = useDeals();
-  const market = useMarketData(deals);
+  const rumours = useRumours();
+  const rumourTickers = useMemo(() => (rumours ?? []).map((r) => r.targetTicker), [rumours]);
+  const market = useMarketData(deals, rumourTickers);
   const [editing, setEditing] = useState<Deal | "new" | null>(null);
+  const [editingRumour, setEditingRumour] = useState<Rumour | "new" | null>(null);
   const { quotes, unaffected, loading } = market;
 
   function handleDelete(deal: Deal) {
     if (confirm(`Delete ${deal.targetTicker} (${deal.targetName})?`)) deleteDeal(deal.id);
   }
+
+  function handleDeleteRumour(rumour: Rumour) {
+    if (confirm(`Delete the ${rumour.targetTicker} (${rumour.targetName}) rumour?`)) deleteRumour(rumour.id);
+  }
+
+  const rumourRows = useMemo(() => {
+    if (rumours === null) return null;
+    const today = todayInNewYork();
+    return rumours.map((r) => buildRumourRow(r, today, quotes, loading));
+  }, [rumours, quotes, loading]);
 
   const rows = useMemo(() => {
     if (deals === null) return null; // server render: storage isn't available yet
@@ -101,6 +118,34 @@ export default function Dashboard() {
         <DealTable rows={rows} onEdit={setEditing} onDelete={handleDelete} />
       )}
 
+      {/* Rumoured deals: kept apart from announced ones, and out of the summary strip */}
+      {rumourRows && (
+        <section aria-labelledby="rumours-heading" className="space-y-3 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 id="rumours-heading" className="text-xl font-semibold tracking-tight">
+                Rumoured deals
+              </h2>
+              <span className="text-sm text-muted">{rumourRows.length} tracked</span>
+              <Badge kind="rumour" title="Reported in the press, not announced by the companies" />
+            </div>
+            <button onClick={() => setEditingRumour("new")} className={buttonClass("secondary")}>
+              + Add rumour
+            </button>
+          </div>
+          <p className="text-sm text-muted">
+            Reported by the press, not announced. Terms are unconfirmed, so spreads are indicative.
+          </p>
+          {rumourRows.length === 0 ? (
+            <div className={cardClass("px-5 py-6 text-center text-sm text-muted")}>
+              No rumours tracked. Add one from a WSJ, Bloomberg or Reuters report.
+            </div>
+          ) : (
+            <RumourTable rows={rumourRows} onEdit={setEditingRumour} onDelete={handleDeleteRumour} />
+          )}
+        </section>
+      )}
+
       {editing && (
         <DealForm
           deal={editing === "new" ? null : editing}
@@ -108,6 +153,17 @@ export default function Dashboard() {
           onSave={(deal) => {
             saveDeal(deal);
             setEditing(null);
+          }}
+        />
+      )}
+
+      {editingRumour && (
+        <RumourForm
+          rumour={editingRumour === "new" ? null : editingRumour}
+          onClose={() => setEditingRumour(null)}
+          onSave={(rumour) => {
+            saveRumour(rumour);
+            setEditingRumour(null);
           }}
         />
       )}
