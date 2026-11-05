@@ -21,12 +21,12 @@ app/api/quotes/route.ts    Latest prices for a list of tickers
 app/api/history/route.ts   Daily closes for one ticker
 lib/types.ts               Deal type
 lib/validate.ts            Add/edit form validation (pure) + validate.test.ts
-lib/calc.ts                ALL financial math (pure functions) + calc.test.ts
+lib/calc.ts                ALL financial math (pure functions, plus median, withLatestQuote, breakPriceRange) + calc.test.ts
 lib/deals.ts               localStorage store (v2 key, seedVersion): useDeals() hook, setDeals(), resetDeals(); syncs across tabs; seed version updates and removed-deal list
 lib/dealRow.ts             buildRow(): deal + market data → price, break price, metrics (table + detail); summarize() headline numbers (real deals only)
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
 lib/useMarketData.ts       Client hook: live quotes + unaffected prices for real deals, refresh()
-components/                DealTable (table at 1280px+, cards below), DealDetail, DealForm, SpreadChart, SummaryStrip, Badge, StatusBar (bottom bar), ui.tsx (cardClass/buttonClass helpers, Segmented pill tabs)
+components/                DealTable (table at 1280px+, cards below), DealDetail, PayoffLadder (break → price → offer bar), DealForm, SpreadChart, SummaryStrip, Badge, StatusBar (bottom bar), ui.tsx (cardClass/buttonClass helpers, Segmented pill tabs)
 data/seed-deals.json       Real deals seeded on first visit. When you change this file, bump SEED_VERSION in lib/deals.ts so returning visitors get the changes (user-added deals are kept). When you delete a seed deal, also add its id to REMOVED_SEED_IDS there. Terms come from SEC 8-K exhibits; expected close = end of the company-guided window.
 scripts/check-data.ts      Manual Yahoo data check
 vitest.config.mts          Test config (adds the `@/` alias); tests sit next to the code as *.test.ts
@@ -69,5 +69,5 @@ Rules:
 
 ## Status (update at the end of each phase)
 - v1 (11 phases) is done and live at https://merger-arbitrage-tracker.vercel.app (Vercel, auto-deploys on push to `main`). Post-review fixes and tests (84) are done; MISTRAS was dropped from the seed deals.
-- UI redesign v2 is in progress (plan in `~/.claude/plans/`): violet accent, Magic Eden-inspired. R0 (tokens, header, bottom status bar, shared helpers) and R1 (summary strip) and R2 (table with monogram tiles, bars, icon actions; card list below 1280px, two columns on tablets) are built; the search box and the All/Real/Demo tabs were removed at the owner's request, so don't re-add them. Demo deals were removed entirely (real deals only); next R3 (detail page: payoff ladder, slider), R4 (chart, forms), R5 (QA, docs, screenshots).
+- UI redesign v2 is in progress (plan in `~/.claude/plans/`): violet accent, Magic Eden-inspired. R0 (tokens, header, bottom status bar, shared helpers) and R1 (summary strip) R2 (table with monogram tiles, bars, icon actions; card list below 1280px, two columns on tablets) and R3 (detail page: risk/reward ladder, if-it-closes / if-it-breaks cards, break-price slider, terms card) are built; the search box and the All/Real/Demo tabs were removed at the owner's request, so don't re-add them. Demo deals were removed entirely (real deals only); next R4 (detail page: payoff ladder, slider), R4 (chart, forms), R5 (QA, docs, screenshots).
 - Fixed: Yahoo returns an empty close for today's daily bar after hours, so the detail page appends the latest quote (`withLatestQuote` in `lib/calc.ts`) and the chart ends on the same day as the headline numbers.

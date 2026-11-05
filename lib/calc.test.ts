@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   annualizedReturn,
   breakEvenProbability,
+  breakPriceRange,
   computeMetrics,
   daysBetween,
   downside,
@@ -224,6 +225,36 @@ describe("spreadHistory", () => {
     const result = spreadHistory(messy, 50, "2026-03-09");
     expect(result.map((r) => r.date)).toEqual(["2026-03-11", "2026-03-12"]);
     expect(result[1].spreadPct).toBeCloseTo(-1 / 51, 10);
+  });
+});
+
+describe("breakPriceRange", () => {
+  it("runs from a quarter of the price up to one cent below the price", () => {
+    expect(breakPriceRange(195.18, 205)).toEqual({ min: 48.8, max: 195.17 });
+    expect(breakPriceRange(48, 50)).toEqual({ min: 12, max: 47.99 });
+  });
+
+  it("stops one cent below the offer when the target trades above it", () => {
+    expect(breakPriceRange(210, 205)).toEqual({ min: 52.5, max: 204.99 });
+  });
+
+  it("never goes below one cent", () => {
+    expect(breakPriceRange(0.03, 1)).toEqual({ min: 0.01, max: 0.02 });
+  });
+
+  it("returns null when there is no room for a range, or the inputs are bad", () => {
+    expect(breakPriceRange(0.02, 1)).toBeNull();
+    expect(breakPriceRange(0, 50)).toBeNull();
+    expect(breakPriceRange(-5, 50)).toBeNull();
+    expect(breakPriceRange(50, 0)).toBeNull();
+    expect(breakPriceRange(NaN, 50)).toBeNull();
+  });
+
+  it("always contains a valid break price: below the price, below the offer", () => {
+    const r = breakPriceRange(48, 50)!;
+    expect(r.max).toBeLessThan(48);
+    expect(r.max).toBeLessThan(50);
+    expect(r.min).toBeLessThan(r.max);
   });
 });
 

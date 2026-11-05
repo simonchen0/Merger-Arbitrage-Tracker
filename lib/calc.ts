@@ -61,6 +61,19 @@ function parseDate(s: string): number | null {
   return t;
 }
 
+/**
+ * Range for the break-price slider: from a quarter of the current price (a deep drop) up to one
+ * cent below the price and the offer (the highest break price that still means a loss).
+ * Null when there is no room for a range or the inputs are unusable.
+ */
+export function breakPriceRange(price: number, offer: number): { min: number; max: number } | null {
+  if (!isPositive(price) || !isPositive(offer)) return null;
+  const cents = (x: number) => Math.round(x * 100) / 100;
+  const min = Math.max(0.01, cents(price * 0.25));
+  const max = cents(Math.min(price, offer) - 0.01);
+  return max > min ? { min, max } : null;
+}
+
 /** Median of the finite numbers in `values` (null, undefined, NaN and Infinity are skipped); null if none. */
 export function median(values: (number | null | undefined)[]): number | null {
   const v = values.filter((x): x is number => typeof x === "number" && Number.isFinite(x)).sort((a, b) => a - b);

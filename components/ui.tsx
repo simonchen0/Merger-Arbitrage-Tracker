@@ -33,11 +33,13 @@ export function buttonClass(variant: Variant = "secondary", size: Size = "sm"): 
 }
 
 /** Neutral 2-letter tile for a ticker. It carries no meaning, so it's never colored by data. */
-export function Monogram({ text }: { text: string }) {
+export function Monogram({ text, large = false }: { text: string; large?: boolean }) {
   return (
     <span
       aria-hidden
-      className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border bg-panel-2 font-mono text-[11px] font-bold tracking-tight text-accent"
+      className={`grid shrink-0 place-items-center border border-border bg-panel-2 font-mono font-bold tracking-tight text-accent ${
+        large ? "h-12 w-12 rounded-xl text-sm" : "h-8 w-8 rounded-lg text-[11px]"
+      }`}
     >
       {text.replace(/[^A-Za-z0-9]/g, "").slice(0, 2).toUpperCase()}
     </span>

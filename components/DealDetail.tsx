@@ -3,16 +3,17 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { spreadHistory, todayInNewYork, withLatestQuote, type PricePoint } from "@/lib/calc";
+import { breakPriceRange, spreadHistory, todayInNewYork, withLatestQuote, type PricePoint } from "@/lib/calc";
 import { buildRow, type DealRow } from "@/lib/dealRow";
 import { deleteDeal, saveDeal, useDeals } from "@/lib/deals";
 import { pct, signClass, usd } from "@/lib/format";
 import type { Deal } from "@/lib/types";
 import { fetchHistory, useMarketData } from "@/lib/useMarketData";
 import { Badge } from "./Badge";
-import { buttonClass } from "./ui";
 import { DealForm } from "./DealForm";
+import { PayoffLadder } from "./PayoffLadder";
 import { SpreadChart } from "./SpreadChart";
+import { buttonClass, cardClass, Monogram, PencilIcon, TrashIcon } from "./ui";
 
 export function DealDetail({ id }: { id: string }) {
   const router = useRouter();
@@ -21,7 +22,7 @@ export function DealDetail({ id }: { id: string }) {
   const dealList = useMemo(() => (deal ? [deal] : null), [deal]);
   const market = useMarketData(dealList);
   const [editing, setEditing] = useState(false);
-  // Break price being typed (null = not editing, show the saved value).
+  // Break price being typed or dragged (null = not editing, show the saved value).
   const [draft, setDraft] = useState<string | null>(null);
 
   // Daily closes since announcement.
@@ -95,115 +96,88 @@ export function DealDetail({ id }: { id: string }) {
 
   const m = row.metrics;
   const est = row.breakIsEstimate;
+  const pastClose = m.daysToClose !== null && m.daysToClose <= 0;
+  const closeText = m.daysToClose === null ? "—" : pastClose ? "past expected close" : `${m.daysToClose} days`;
+
+  // Slider for the break price: only when there's a price to measure against.
+  const range = row.price !== null ? breakPriceRange(row.price, deal.offerPrice) : null;
+  const sliderBase = (usingDraft ? draftValue : saved.breakPrice) ?? range?.min ?? 0;
+  const sliderValue = range ? Math.min(range.max, Math.max(range.min, sliderBase)) : 0;
 
   return (
     <div className="space-y-6">
-      <Link href="/" className="text-sm text-muted hover:text-accent">
+      <Link href="/" className="inline-block text-sm text-muted transition-colors hover:text-accent">
         ← All deals
       </Link>
 
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="font-mono text-2xl font-semibold">{deal.targetTicker}</h1>
+        <div className="flex items-center gap-4">
+          <Monogram text={deal.targetTicker} large />
+          <div>
+            <h1 className="font-mono text-3xl font-semibold leading-tight">{deal.targetTicker}</h1>
+            <p className="text-muted">{deal.targetName}</p>
           </div>
-          <p className="text-text">{deal.targetName}</p>
-          <p className="text-sm text-muted">
-            Acquired by <span className="text-text">{deal.acquirerName}</span> for{" "}
-            <span className="num text-text">{usd(deal.offerPrice)}</span> cash per share
-          </p>
         </div>
         <div className="flex gap-2">
-          <button
-            onClick={() => setEditing(true)}
-            className={buttonClass("secondary")}
-          >
-            Edit deal
+          <button onClick={() => setEditing(true)} className={buttonClass("secondary", "md")}>
+            <PencilIcon className="h-4 w-4" /> Edit deal
           </button>
-          <button
-            onClick={handleDelete}
-            className={buttonClass("danger")}
-          >
-            Delete
+          <button onClick={handleDelete} className={buttonClass("danger", "md")}>
+            <TrashIcon className="h-4 w-4" /> Delete
           </button>
         </div>
       </div>
 
-      {/* Terms */}
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-border bg-panel p-4 text-sm sm:grid-cols-4">
-        <Term label="Announced" value={deal.announceDate} />
-        <Term
-          label="Expected close"
-          value={
-            <>
-              {deal.expectedCloseDate}{" "}
-              <span className={m.daysToClose !== null && m.daysToClose <= 0 ? "text-down" : "text-muted"}>
-                ({m.daysToClose === null ? "—" : m.daysToClose <= 0 ? "past expected close" : `${m.daysToClose} days`})
-              </span>
-            </>
-          }
-        />
-        <Term
-          label="Unaffected price"
-          value={
-            <>
-              <span className="text-est">{usd(row.unaffected)}</span>{" "}
-              <span className="text-xs text-muted">
-                {deal.unaffectedDate ? `close on ${deal.unaffectedDate}` : "close before announcement"}
-              </span>
-            </>
-          }
-        />
-        <Term
-          label="Source"
-          value={
-            // Only http(s) links are rendered, whatever is in storage.
-            deal.sourceUrl && /^https?:\/\//i.test(deal.sourceUrl) ? (
-              <a href={deal.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
-                Announcement ↗
-              </a>
-            ) : (
-              <span className="text-muted">Not provided</span>
-            )
-          }
-        />
-      </dl>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-sm text-muted">
+          <span className="text-text">{deal.acquirerName}</span> acquiring for{" "}
+          <span className="num text-text">{usd(deal.offerPrice)}</span> cash per share
+        </span>
+        <Chip>Announced {deal.announceDate}</Chip>
+        <Chip tone={pastClose ? "text-down" : ""}>
+          Closes {deal.expectedCloseDate} · {closeText}
+        </Chip>
+      </div>
 
-      {/* Metric cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Target price" value={usd(row.price)} sub={row.priceNote} />
-        <StatCard label="Offer" value={usd(deal.offerPrice)} sub="cash per share" />
-        <StatCard
-          label="Spread"
-          value={pct(m.spreadPct)}
-          valueClass={signClass(m.spreadPct)}
-          sub={`${usd(m.spreadDollars)} per share`}
-        />
-        <StatCard
-          label="Annualized return"
-          value={pct(m.annualized)}
-          valueClass={signClass(m.annualized)}
-          sub={m.daysToClose !== null && m.daysToClose > 0 ? `over ${m.daysToClose} days` : "past expected close"}
-        />
-        <StatCard
-          label="Downside if deal breaks"
-          value={pct(m.downside)}
-          valueClass={est ? "text-est" : signClass(m.downside)}
-          sub={`${usd(m.downsideDollars)} per share`}
-          est={est}
-        />
-        <StatCard
-          label="Break-even probability"
-          value={breakEvenText(row)}
-          valueClass={est ? "text-est" : ""}
-          sub="deal must close at least this often"
-          est={est}
-        />
+      <PayoffLadder row={row} />
+
+      {/* The two outcomes */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <section className={cardClass("p-5")}>
+          <h2 className="text-[11px] font-medium uppercase tracking-wider text-muted">If it closes</h2>
+          <div className={`num mt-2 text-4xl font-semibold ${signClass(m.annualized)}`}>{pct(m.annualized)}</div>
+          <div className="text-xs text-muted">
+            annualized return{m.daysToClose !== null && m.daysToClose > 0 ? ` over ${m.daysToClose} days` : " · past expected close"}
+          </div>
+          <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
+            <Metric label="Spread" value={pct(m.spreadPct)} valueClass={signClass(m.spreadPct)} sub={`${usd(m.spreadDollars)} per share`} />
+            <Metric label="Offer" value={usd(deal.offerPrice)} sub="cash per share" />
+          </dl>
+        </section>
+
+        <section className={cardClass("p-5")}>
+          <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted">
+            If it breaks {est && <Badge kind="est" title="Uses the estimated break price" />}
+          </h2>
+          <div className={`num mt-2 text-4xl font-semibold ${est ? "text-est" : signClass(m.downside)}`}>{pct(m.downside)}</div>
+          <div className="text-xs text-muted">
+            {usd(m.downsideDollars)} per share{row.breakPrice !== null ? `, falling to ${usd(row.breakPrice)}` : ""}
+          </div>
+          <dl className="mt-5 grid grid-cols-2 gap-4 border-t border-border pt-4">
+            <Metric
+              label="Break-even probability"
+              value={breakEvenText(row)}
+              valueClass={est ? "text-est" : ""}
+              sub="the deal must close at least this often"
+            />
+            <Metric label="Price now" value={usd(row.price)} sub={row.priceNote} />
+          </dl>
+        </section>
       </div>
 
       {/* Spread history */}
-      <section className="space-y-2 rounded-2xl border border-border bg-panel p-4">
+      <section className={cardClass("space-y-2 p-5")}>
         <h2 className="text-sm font-semibold">Spread history</h2>
         {closes === undefined ? (
           <p className="py-10 text-center text-sm text-muted">Loading price history…</p>
@@ -214,11 +188,11 @@ export function DealDetail({ id }: { id: string }) {
         )}
       </section>
 
-      {/* Break price + scenario */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <section className="space-y-3 rounded-2xl border border-border bg-panel p-4">
+      {/* Break-price scenario and the deal's terms */}
+      <div className="grid gap-4 lg:grid-cols-3">
+        <section className={cardClass("space-y-4 p-5 lg:col-span-2")}>
           <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold">Break price</h2>
+            <h2 className="text-sm font-semibold">Break-price scenario</h2>
             {est && <Badge kind="est" title="Estimated: unaffected close before the announcement" />}
           </div>
           <p className="text-xs text-muted">
@@ -226,8 +200,9 @@ export function DealDetail({ id }: { id: string }) {
             {deal.unaffectedDate
               ? `the close on ${deal.unaffectedDate}, before news of the deal leaked`
               : "the close before the announcement"}
-            ). Type a different price to see the effect.
+            ). Drag the slider or type a price to see the effect above.
           </p>
+
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted">$</span>
@@ -238,7 +213,7 @@ export function DealDetail({ id }: { id: string }) {
                 aria-label="Break price"
                 value={draft ?? (saved.breakPrice !== null ? saved.breakPrice.toFixed(2) : "")}
                 onChange={(e) => setDraft(e.target.value)}
-                className={`w-32 rounded-lg border bg-panel-2 py-1.5 pl-6 pr-2 text-sm outline-none num [color-scheme:dark] focus:border-accent ${
+                className={`w-32 rounded-lg border bg-panel-2 py-1.5 pl-6 pr-2 text-sm outline-none transition-colors num [color-scheme:dark] focus:border-accent ${
                   draftError ? "border-down" : "border-border"
                 } ${est && draft === null ? "text-est" : ""}`}
               />
@@ -251,25 +226,89 @@ export function DealDetail({ id }: { id: string }) {
               Save
             </button>
             {(deal.breakPrice !== undefined || draft !== null) && (
-              <button
-                onClick={() => saveBreak(undefined)}
-                className={buttonClass("secondary")}
-              >
+              <button onClick={() => saveBreak(undefined)} className={buttonClass("secondary")}>
                 Use unaffected price{row.unaffected !== null ? ` (${usd(row.unaffected)})` : ""}
               </button>
             )}
           </div>
+
+          <div>
+            <input
+              type="range"
+              aria-label="Break price slider"
+              min={range?.min ?? 0}
+              max={range?.max ?? 1}
+              step={0.01}
+              value={sliderValue}
+              disabled={!range}
+              onChange={(e) => setDraft(Number(e.target.value).toFixed(2))}
+              className="h-2 w-full cursor-pointer accent-accent disabled:cursor-not-allowed disabled:opacity-40"
+            />
+            {range && (
+              <div className="num mt-1 flex justify-between text-[11px] text-muted">
+                <span>{usd(range.min)}</span>
+                <span>{usd(range.max)}</span>
+              </div>
+            )}
+          </div>
+
+          <p className="text-sm">
+            <span className="text-muted">Downside </span>
+            <span className={`num font-medium ${est ? "text-est" : signClass(m.downside)}`}>{pct(m.downside)}</span>
+            <span className="text-muted"> · Break-even </span>
+            <span className={`num font-medium ${est ? "text-est" : ""}`}>{breakEvenText(row)}</span>
+          </p>
+
           {draftError && <p className="text-xs text-down">{draftError}</p>}
           {usingDraft && draftValue !== deal.breakPrice && (
             <p className="text-xs text-muted">Showing a what-if. Save to keep this break price.</p>
           )}
         </section>
 
-        <section className="space-y-2 rounded-2xl border border-border bg-panel p-4 text-sm">
-          <h2 className="text-sm font-semibold">The trade in one paragraph</h2>
-          <Scenario row={row} />
+        <section className={cardClass("p-5")}>
+          <h2 className="text-sm font-semibold">Deal terms</h2>
+          <dl className="mt-3 space-y-3">
+            <Term label="Announced" value={deal.announceDate} />
+            <Term
+              label="Expected close"
+              value={
+                <>
+                  {deal.expectedCloseDate} <span className={pastClose ? "text-down" : "text-muted"}>({closeText})</span>
+                </>
+              }
+            />
+            <Term
+              label="Unaffected price"
+              value={
+                <>
+                  <span className="text-est">{usd(row.unaffected)}</span>{" "}
+                  <span className="text-xs text-muted">
+                    {deal.unaffectedDate ? `close on ${deal.unaffectedDate}` : "close before announcement"}
+                  </span>
+                </>
+              }
+            />
+            <Term
+              label="Source"
+              value={
+                // Only http(s) links are rendered, whatever is in storage.
+                deal.sourceUrl && /^https?:\/\//i.test(deal.sourceUrl) ? (
+                  <a href={deal.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
+                    Announcement ↗
+                  </a>
+                ) : (
+                  <span className="text-muted">Not provided</span>
+                )
+              }
+            />
+          </dl>
         </section>
       </div>
+
+      <section className={cardClass("space-y-2 p-5 text-sm")}>
+        <h2 className="text-sm font-semibold">The trade in one paragraph</h2>
+        <Scenario row={row} />
+      </section>
 
       {editing && (
         <DealForm
@@ -314,7 +353,7 @@ function Scenario({ row }: { row: DealRow }) {
         ) : (
           <>
             costs more than the <span className="num text-text">{usd(deal.offerPrice)}</span> offer, so it loses{" "}
-            <span className="num text-down">{usd(m.spreadDollars)}</span> per share if the deal closes on current terms.
+            <span className="num text-down">{m.spreadDollars === null ? "—" : usd(Math.abs(m.spreadDollars))}</span> per share if the deal closes on current terms.
             The market is pricing in a higher bid.
           </>
         )}
@@ -338,35 +377,26 @@ function Scenario({ row }: { row: DealRow }) {
   );
 }
 
+function Chip({ children, tone = "" }: { children: React.ReactNode; tone?: string }) {
+  return (
+    <span className={`rounded-full border border-border bg-panel-2 px-2.5 py-1 num text-muted ${tone}`}>{children}</span>
+  );
+}
+
 function Term({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
       <dt className="text-xs text-muted">{label}</dt>
-      <dd className="num">{value}</dd>
+      <dd className="num text-sm">{value}</dd>
     </div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  sub,
-  valueClass = "",
-  est = false,
-}: {
-  label: string;
-  value: string;
-  sub: string;
-  valueClass?: string;
-  est?: boolean;
-}) {
+function Metric({ label, value, sub, valueClass = "" }: { label: string; value: string; sub: string; valueClass?: string }) {
   return (
-    <div className="space-y-1 rounded-2xl border border-border bg-panel p-3">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted">{label}</span>
-        {est && <Badge kind="est" title="Uses the estimated break price" />}
-      </div>
-      <div className={`text-xl num ${valueClass}`}>{value}</div>
+    <div>
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className={`num mt-0.5 text-xl font-semibold ${valueClass}`}>{value}</dd>
       <div className="text-xs text-muted">{sub}</div>
     </div>
   );
