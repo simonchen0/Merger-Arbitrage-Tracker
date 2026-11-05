@@ -209,6 +209,9 @@ export function DealDetail({ id }: { id: string }) {
                   aria-label="Break price"
                   value={draft ?? (saved.breakPrice !== null ? saved.breakPrice.toFixed(2) : "")}
                   onChange={(e) => setDraft(e.target.value)}
+                  // A focused number input changes value on the mouse wheel, which would silently
+                  // change the scenario while scrolling the page. Blur it so the page scrolls instead.
+                  onWheel={(e) => e.currentTarget.blur()}
                   className={`w-32 rounded-lg border bg-panel-2 py-1.5 pl-6 pr-2 text-sm outline-none transition-colors num [color-scheme:dark] focus:border-accent ${
                     draftError ? "border-down" : "border-border"
                   } ${est && draft === null ? "text-est" : ""}`}

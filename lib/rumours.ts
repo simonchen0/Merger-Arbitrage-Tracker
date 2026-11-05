@@ -6,6 +6,7 @@
 // every change re-renders the subscribers (including other open tabs).
 import { useMemo, useSyncExternalStore } from "react";
 import seedRumours from "@/data/seed-rumours.json";
+import { daysBetween, todayInNewYork } from "./calc";
 import type { Rumour } from "./types";
 
 const STORAGE_KEY = "merger-arb-rumours-v1";
@@ -32,8 +33,8 @@ export function isRumour(x: unknown): x is Rumour {
   );
 }
 
-/** True if a rumour for this ticker ships with the site (a visitor's own row for it would stay hidden). */
-export function isSharedTicker(ticker: string, shared: Rumour[] = SHARED_RUMOURS): boolean {
+/** True if a (still fresh) rumour for this ticker ships with the site, so a visitor's own row for it would stay hidden. */
+export function isSharedTicker(ticker: string, shared: Rumour[] = freshShared()): boolean {
   return shared.some((r) => r.targetTicker.toUpperCase() === ticker.toUpperCase());
 }
 
@@ -112,14 +113,31 @@ function subscribe(listener: () => void): () => void {
 /** Rumours shipped with the site, from data/seed-rumours.json (invalid entries ignored). */
 export const SHARED_RUMOURS: Rumour[] = (seedRumours as unknown[]).filter(isRumour);
 
+/** Shared rumours are hidden this many days after their report date, so a stale one can't linger. */
+export const SHARED_MAX_AGE_DAYS = 60;
+
+/** The shared rumours still fresh on `today`. A date that can't be read keeps the rumour, rather than guessing. */
+export function freshShared(shared: Rumour[] = SHARED_RUMOURS, today: string = todayInNewYork()): Rumour[] {
+  return shared.filter((r) => {
+    const age = daysBetween(r.reportDate, today);
+    return age === null || age <= SHARED_MAX_AGE_DAYS;
+  });
+}
+
 /**
- * The shared rumours (marked `shared`) followed by the visitor's own. If the visitor tracks a
- * ticker that is also shared, the shared row wins and theirs stays hidden in storage.
+ * The fresh shared rumours (marked `shared`) followed by the visitor's own. If the visitor tracks a
+ * ticker that is also shared, the shared row wins and theirs stays hidden in storage. Once a shared
+ * rumour has expired it no longer hides the visitor's own row. The visitor's own rows never expire.
  */
-export function mergeShared(stored: Rumour[], shared: Rumour[] = SHARED_RUMOURS): Rumour[] {
-  const sharedTickers = new Set(shared.map((r) => r.targetTicker.toUpperCase()));
+export function mergeShared(
+  stored: Rumour[],
+  shared: Rumour[] = SHARED_RUMOURS,
+  today: string = todayInNewYork(),
+): Rumour[] {
+  const fresh = freshShared(shared, today);
+  const sharedTickers = new Set(fresh.map((r) => r.targetTicker.toUpperCase()));
   return [
-    ...shared.map((r) => ({ ...r, shared: true as const })),
+    ...fresh.map((r) => ({ ...r, shared: true as const })),
     ...stored.filter((r) => !sharedTickers.has(r.targetTicker.toUpperCase())),
   ];
 }

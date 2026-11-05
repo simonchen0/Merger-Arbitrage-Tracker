@@ -9,7 +9,7 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata: Metadata = {
   title: "Merger Arb Tracker",
-  description: "Track spreads, annualized returns, and downside on announced all-cash M&A deals.",
+  description: "Track spreads, annualized returns, and downside on announced all-cash M&A deals, plus reported rumours.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

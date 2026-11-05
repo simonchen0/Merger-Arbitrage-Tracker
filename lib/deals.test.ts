@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import seedDeals from "@/data/seed-deals.json";
-import { REMOVED_SEED_IDS, SEED_VERSION, isDeal, readStored, refresh, type Stored } from "./deals";
+import { isValidDate, todayInNewYork } from "./calc";
+import { DEALS_AS_OF, REMOVED_SEED_IDS, SEED_VERSION, isDeal, readStored, refresh, type Stored } from "./deals";
 import type { Deal } from "./types";
 
 const seeds = seedDeals as Deal[];
@@ -151,5 +152,17 @@ describe("seed data", () => {
       expect(d.offerPrice).toBeGreaterThan(0);
       expect(d.sourceUrl).toMatch(/^https:\/\/www\.sec\.gov\//);
     }
+  });
+});
+
+describe("DEALS_AS_OF", () => {
+  it("is a real date that isn't in the future", () => {
+    expect(isValidDate(DEALS_AS_OF)).toBe(true);
+    expect(DEALS_AS_OF <= todayInNewYork()).toBe(true);
+  });
+
+  it("is not earlier than the newest announcement in the seed deals", () => {
+    const newest = seeds.map((d) => d.announceDate).sort().at(-1)!;
+    expect(DEALS_AS_OF >= newest).toBe(true);
   });
 });

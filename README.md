@@ -4,13 +4,15 @@ A dashboard for tracking announced **all-cash M&A deals** the way an event-drive
 
 **Live demo: https://merger-arbitrage-tracker.vercel.app**
 
+**Snapshot:** deal terms as of Nov 5, 2026. Closed deals drop off automatically; new deals are added by a reviewed update, so the list thins out as deals close.
+
 ![Dashboard](docs/screenshots/dashboard.png)
 
 ## Features
 
 - **Deal dashboard.** A summary strip (median annualized return, widest spread, median implied completion) above a sortable table of target, acquirer, live price, offer, spread ($ and %), annualized return, downside, break-even probability, and expected close. On tablets and phones the table becomes a card list.
 - **Deal management.** Add, edit, and delete deals. Typing a ticker checks it against market data, fills in the company name, and suggests a break price.
-- **Deal analysis.** A detail page per deal with the metrics above, an editable break price that recalculates live, and a plain-English summary of the trade.
+- **Deal analysis.** A detail page per deal with the metrics above, and an editable break price that recalculates live.
 - **Spread history.** A chart of how each deal's spread has moved since announcement, with a table of the underlying data.
 - **Real deals only.** Twelve real pending all-cash deals (terms from SEC filings, each with a source link). Everything the tracker shows is a real deal.
 - **Stays current.** Closed deals are removed automatically; new deals are added by a reviewed update (see [Keeping the deals current](#keeping-the-deals-current)).
@@ -104,24 +106,15 @@ Below the announced deals is a separate section for rumoured deals: potential ac
 | Shared | Added by Claude when asked ("find new rumours"), after reading a source (any site, filings included), with terms only if the text states them. Ships with the site as `data/seed-rumours.json`, read-only. |
 | Your own | The **+ Add rumour** form. |
 
-**Why not automatic?** A scan of Yahoo's free news search was built and then removed at the owner's request. It found only a handful of usable headlines per run (roughly 3 to 5 of about 80), could not tell a buyer from a target when a headline named two companies, and its rows were unverified. The outlets that break rumours don't offer free feeds:
-
-| Source | What's available |
-|---|---|
-| Bloomberg | No public API (Terminal and B-PIPE are paid). Automated access is blocked and against its terms. |
-| WSJ / Dow Jones | Newswires and Factiva are paid. Public RSS has headlines only, and articles are paywalled. |
-| Reuters | Public RSS was discontinued in 2020. The news API is paid (LSEG). |
-
-When asked, Claude searches the open web rather than a feed, so any source can be used. Paywalled pages (Bloomberg, WSJ, Variety, Deadline) can't be read, so terms from them aren't used. Terms are never read out of a headline: "$5bn deal" isn't a per-share price, and "exploring a sale" isn't "in talks". They are entered only from a source that was actually read.
+**Why not automatic?** The outlets that break rumours (Bloomberg, WSJ, Reuters) have no free feeds, and Yahoo's free news search was too noisy to trust: a scan found only 3 to 5 usable headlines out of about 80 and couldn't tell a buyer from a target. So rumours are added only on purpose, and terms are never read out of a headline ("$5bn deal" isn't a per-share price). When asked, Claude searches the open web and reads the source; paywalled pages can't be read, so terms from them aren't used.
 
 ## Known limitations
 
-- **Offer increases and special dividends aren't modeled.** The spread chart uses the current offer for every day.
+- **Offer increases and dividends aren't modeled.** The spread chart uses the current offer for every day, and a target that keeps paying a dividend until closing can trade at or above the offer (Penske Automotive does), which shows as a negative spread.
 - **Deal terms are manual.** There's no free API for them.
 - **All-cash deals only.** No stock or mixed consideration, and no contingent value rights.
 - **Yahoo Finance is unofficial.** It can change or rate-limit without notice. If a price fails to load, the app says so and keeps the last prices it had.
 - **Closed deals disappear.** Targets are delisted when a deal closes and lose their price history. The app detects this and removes the deal on its own; it can only react once Yahoo has delisted the ticker.
-- **Dividends aren't modelled.** A target that keeps paying a dividend until closing can trade at or above the offer (Penske Automotive does), which shows as a negative spread.
 - **Deals are saved per browser.** They aren't shared across devices. "Reset to the starting deals" restores the seeded list.
 
 ## Getting started

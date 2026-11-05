@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import seedRumours from "@/data/seed-rumours.json";
-import { isRumour, isSharedTicker, mergeShared, readStoredRumours } from "./rumours";
+import { freshShared, isRumour, isSharedTicker, mergeShared, readStoredRumours } from "./rumours";
 import { validateRumour } from "./validate";
 import type { Rumour } from "./types";
 
@@ -97,11 +97,13 @@ describe("isSharedTicker", () => {
 });
 
 describe("shared rumours", () => {
+  // minimal.reportDate is 2026-10-30; TODAY is 5 days later, so the shared row is fresh.
+  const TODAY = "2026-11-04";
   const shared: Rumour = { ...minimal, id: "shared-ABC", targetTicker: "ABC" };
   const mine: Rumour = { ...minimal, id: "mine-XYZ", targetTicker: "XYZ" };
 
   it("mergeShared puts shared rumours first, marked shared, then the visitor's own", () => {
-    const merged = mergeShared([mine], [shared]);
+    const merged = mergeShared([mine], [shared], TODAY);
     expect(merged.map((r) => r.id)).toEqual(["shared-ABC", "mine-XYZ"]);
     expect(merged[0].shared).toBe(true);
     expect(merged[1].shared).toBeUndefined();
@@ -109,12 +111,34 @@ describe("shared rumours", () => {
 
   it("mergeShared hides the visitor's own row for a ticker that is shared (any case)", () => {
     const duplicate = { ...mine, id: "mine-abc", targetTicker: "abc" };
-    expect(mergeShared([duplicate, mine], [shared]).map((r) => r.id)).toEqual(["shared-ABC", "mine-XYZ"]);
+    expect(mergeShared([duplicate, mine], [shared], TODAY).map((r) => r.id)).toEqual(["shared-ABC", "mine-XYZ"]);
   });
 
   it("mergeShared doesn't change what is stored, and works with nothing shared", () => {
-    expect(mergeShared([mine], [])).toEqual([mine]);
-    expect(mergeShared([], [])).toEqual([]);
+    expect(mergeShared([mine], [], TODAY)).toEqual([mine]);
+    expect(mergeShared([], [], TODAY)).toEqual([]);
+  });
+
+  it("hides a shared rumour more than 60 days after its report date, and keeps it up to day 60", () => {
+    const reported = { ...shared, reportDate: "2026-09-05" };
+    expect(freshShared([reported], "2026-11-04")).toEqual([reported]); // exactly 60 days
+    expect(freshShared([reported], "2026-11-05")).toEqual([]); // 61 days
+  });
+
+  it("keeps a shared rumour whose date can't be read, rather than guessing", () => {
+    const odd = { ...shared, reportDate: "garbage" };
+    expect(freshShared([odd], TODAY)).toEqual([odd]);
+  });
+
+  it("an expired shared rumour no longer hides the visitor's own row for the same ticker", () => {
+    const old = { ...shared, reportDate: "2026-01-01" };
+    const own = { ...mine, id: "mine-abc", targetTicker: "ABC" };
+    expect(mergeShared([own], [old], TODAY).map((r) => r.id)).toEqual(["mine-abc"]);
+  });
+
+  it("never hides the visitor's own rows by age", () => {
+    const ancient = { ...mine, reportDate: "2020-01-01" };
+    expect(mergeShared([ancient], [], TODAY)).toEqual([ancient]);
   });
 });
 

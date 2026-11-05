@@ -1,8 +1,16 @@
 "use client";
 
-import { resetDeals } from "@/lib/deals";
+import { DEALS_AS_OF, resetDeals } from "@/lib/deals";
 import { useRumours } from "@/lib/rumours";
 import { Badge } from "./Badge";
+
+// "2026-11-05" → "Nov 5, 2026" (UTC, so the date doesn't shift with the viewer's time zone)
+const asOf = new Date(`${DEALS_AS_OF}T00:00:00Z`).toLocaleDateString("en-US", {
+  month: "short",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 /** Persistent bottom bar: where the data comes from, what the badges mean, and reset. */
 export function StatusBar() {
@@ -30,6 +38,10 @@ export function StatusBar() {
             <Badge kind="ind" /> unconfirmed reported terms
           </span>
         )}
+
+        <span className="hidden shrink-0 lg:inline" title="When the deal terms were last checked against company filings">
+          Deal terms as of {asOf}
+        </span>
 
         <button onClick={handleReset} className="ml-auto shrink-0 transition-colors hover:text-text">
           Reset to the starting deals

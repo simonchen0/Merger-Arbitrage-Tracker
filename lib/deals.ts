@@ -13,6 +13,9 @@ const LEGACY_STORAGE_KEY = "merger-arb-deals-v1"; // plain array, before seed ve
 /** Bump when data/seed-deals.json changes, so returning visitors pick the changes up. */
 export const SEED_VERSION = 4;
 
+/** The date the deal terms in data/seed-deals.json were last checked (YYYY-MM-DD). Shown in the status bar. Bump it with SEED_VERSION. */
+export const DEALS_AS_OF = "2026-11-05";
+
 /**
  * Ids of seeded deals that were later removed from data/seed-deals.json. Browsers that saved
  * them drop them on the next seed version bump. (Add an id here whenever you delete a seed deal.)
