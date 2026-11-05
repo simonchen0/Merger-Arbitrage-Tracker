@@ -9,7 +9,7 @@ A dashboard for tracking announced **all-cash** M&A deals from an event-driven/m
 - `yahoo-finance2` v4 for prices (free, unofficial). Use the v4 style `new YahooFinance()`, and only call it on the server (API routes).
 - Recharts for the spread chart.
 - Vitest for tests.
-- Deals persist in `localStorage`, seeded from `data/seed-deals.json`. Rumours persist under their own key with no seed. No database, no auth.
+- Deals persist in `localStorage`, seeded from `data/seed-deals.json`. Rumours: the visitor's own (and auto-found) ones persist under their own key; shared ones ship in `data/seed-rumours.json`. No database, no auth.
 - Deploy on Vercel.
 
 ## Architecture
@@ -23,7 +23,11 @@ lib/types.ts               Deal and Rumour types
 lib/validate.ts            Add/edit form validation (pure): validateDeal, validateRumour + validate.test.ts
 lib/calc.ts                ALL financial math (pure functions, plus median, withLatestQuote, breakPriceRange, indicativeMetrics for rumours) + calc.test.ts
 lib/deals.ts               localStorage store (v2 key, seedVersion): useDeals() hook, setDeals(), resetDeals(); syncs across tabs; seed version updates and removed-deal list
-lib/rumours.ts             Rumours store (merger-arb-rumours-v1, no seed): useRumours(), saveRumour(), deleteRumour(); syncs across tabs
+lib/rumours.ts             Rumours store (merger-arb-rumours-v1): useRumours() (shared + own), saveRumour(s), deleteRumour() (dismisses auto-found tickers), 30-day expiry of auto-found rows, scan state; syncs across tabs
+lib/rumourScan.ts          Pure headline classifier (pickCandidates, isRumourHeadline, newRumoursFromScan) + tests built from real headlines
+lib/useRumourScan.ts       Client hook: runs /api/rumours/scan on load (if >1h since last) and on the Scan button, adds results
+app/api/rumours/scan/route.ts   Yahoo news searches → candidates (USD equities only), cached 15 min
+data/seed-rumours.json     Shared rumours added by Claude after reading sources (read-only for visitors; see "Finding rumours" below)
 lib/sources.ts             publisherFor(url): known outlets get a short name, other news sites their own domain, social media/forums are rejected; isKnownPublisher()
 lib/dealRow.ts             buildRow(): deal + market data → price, break price, metrics (table + detail); buildRumourRow(); summarize() headline numbers (announced deals only)
 lib/format.ts              Display formatting (usd, pct, sign colors, as-of time)
@@ -54,8 +58,9 @@ Rules:
 - The tracker shows real deals only: there are no demo or fictional deals (they were removed at the owner's request; don't re-add them).
 - Estimates (default break price and anything derived from it): **EST** tag in amber (`text-est`).
 - Market prices show an "as of" timestamp. Deal terms are entered manually from a press release or 8-K, with a source link.
-- Rumoured deals: never fabricate or assume terms. Each one needs a link to a report on a news site (`lib/sources.ts`): any news site is accepted (owner's choice, not just WSJ/Bloomberg/Reuters), social media and forums are rejected, and the publisher label is always derived from the link, never typed. Anything the report doesn't state shows "Not disclosed". Numbers from reported terms are amber with an **INDICATIVE** tag, and the section carries an **UNCONFIRMED** tag. Rumours stay out of the summary strip. There are no seeded rumours: don't add any unless the owner supplies verified ones.
-- Rumours are added by hand. Automated discovery was investigated and dropped: Yahoo's news search links only to Yahoo-hosted copies (never the original reuters.com/bloomberg.com/wsj.com article), and the outlets themselves have no free API (see README).
+- Rumoured deals: never fabricate or assume terms. Each one needs a link to a report on a news site (`lib/sources.ts`): any news site is accepted (owner's choice), social media and forums are rejected, and the publisher label is always derived from the link, never typed. Anything the report doesn't state shows "Not disclosed". Numbers from reported terms are amber with an **INDICATIVE** tag, and the section carries an **UNCONFIRMED** tag. Rumours stay out of the summary strip.
+- Auto-found rumours (headline scan, owner's choice to add them automatically): always the **AUTO-FOUND** badge, the headline, blank terms, and a 30-day expiry unless the user edits them. Never read terms out of a headline. A deleted auto-found ticker is dismissed so it doesn't return.
+- Finding rumours on request ("find new rumours"): search any source (web search, press digests, filings), not just Yahoo. For each candidate: (1) confirm it hasn't become an announced deal and isn't already in `data/seed-deals.json`; (2) read the article or a filing; if it's paywalled or blocked, don't use it as the basis for terms and don't try to get around the block; (3) add to `data/seed-rumours.json` with id `shared-TICKER`, the *original* report date, and a link to the best source; (4) fill acquirer, per-share price and closing date only if the text states them (a range or a total dollar value is not a per-share price: leave blank); (5) check the ticker is a USD equity (`/api/quotes`); (6) skip anything older than about 30 days, rejected, or dead; (7) run `npm test` (it validates this file). Say plainly which sources couldn't be read. Don't commit until the owner says so.
 
 ## Conventions
 - Keep it simple: no new dependencies, abstractions, state libraries, or features beyond the plan without asking first. Deferred: dividends, offer bumps, import/export, closed-deal case studies.
@@ -76,6 +81,6 @@ Rules:
 - v1 (11 phases) is done and live at https://merger-arbitrage-tracker.vercel.app (Vercel, auto-deploys on push to `main`). Post-review fixes and tests (84) are done; MISTRAS was dropped from the seed deals.
 - UI redesign v2 is in progress (plan in `~/.claude/plans/`): violet accent, Magic Eden-inspired. R0 (tokens, header, bottom status bar, shared helpers) and R1 (summary strip) R2 (table with monogram tiles, bars, icon actions; card list below 1280px, two columns on tablets) and R3 (detail page: risk/reward ladder, if-it-closes / if-it-breaks cards, break-price slider, terms card) and R4 (area chart with gradient wash, restyled add/edit dialog, shared EmptyState for no-deals / deal-not-found / 404 / error, dashboard loading skeleton) are built; the search box and the All/Real/Demo tabs were removed at the owner's request, so don't re-add them. Demo deals were removed entirely (real deals only); next R5 (QA, README screenshots, docs) (detail page: payoff ladder, slider), R4 (chart, forms), R5 (QA, docs, screenshots).
 - R4 is committed and pushed. R5 (QA and docs) is done: layout checked at 1440/1024/768/390px with no horizontal overflow, keyboard focus ring and reduced-motion verified, README screenshots retaken (dev badge and fixed bar hidden), README text updated. The redesign is complete.
-- Rumoured deals (plan in `~/.claude/plans/`): phase 1 (model, allowlist, indicative metrics, store, validation) and phase 2 (dashboard section, add/edit form, badges) are pushed. Phase 3 (assisted news lookup) was dropped after a spike showed Yahoo links are all Yahoo-hosted; manual entry only, at the owner's choice. Phase 4 (docs, QA) is in progress.
+- Rumoured deals are complete (plans in `~/.claude/plans/`): model and store, dashboard section and form, any-news-site sources, the headline scan with AUTO-FOUND rows (dismiss, 30-day expiry, Scan button), and the shared `data/seed-rumours.json` that Claude fills on request from any source. First shared entries (WEN, XPOF, LION) added 2026-11-05. Known gaps: headlines naming two companies are skipped by the scan; paywalled pages can't be read.
 - Text trim (owner's request): removed the ticker monogram tiles (PT, VR), the detail page's "The trade in one paragraph" section, the summary strip subtitles, per-row "as of" times (shown once in the header when shared), and the rumours intro paragraph. Don't re-add them.
 - Fixed: Yahoo returns an empty close for today's daily bar after hours, so the detail page appends the latest quote (`withLatestQuote` in `lib/calc.ts`) and the chart ends on the same day as the headline numbers.

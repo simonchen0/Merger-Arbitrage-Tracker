@@ -83,18 +83,28 @@ Below the announced deals is a separate section for rumoured deals: potential ac
 - **A source is required.** Every rumour links to the report. Any news site is accepted, since rumours surface in many outlets. Well-known outlets (WSJ, Bloomberg, Reuters, FT, CNBC and others) show their short name; any other site shows its own domain and the form notes that it isn't a major outlet, so the credibility check is yours. The publisher is always read from the link, never typed, so the label can't misstate where a report came from (a lookalike such as `reuters.com.evil.io` is labelled with its true domain). Social media, forums and chat sites (Reddit, X, StockTwits, YouTube and similar) are rejected, because a post there isn't a report.
 - **Nothing is assumed.** The potential acquirer, a per-share price and a closing timeframe are entered only if the report states them. Anything missing shows as "Not disclosed".
 - **Numbers are indicative.** If a report gives a per-share cash price, the spread is calculated against it. It's shown in amber with an **INDICATIVE** tag, because the terms are unconfirmed. Annualized return appears only when the report also gives a timeframe. There's no downside or break-even, since nothing has been agreed.
-- **No starting rumours.** Rumours go stale quickly and each one needs checking against its source, so the list starts empty.
+**Where the rows come from**
 
-**Can rumours be found automatically?** I looked into it and, for now, no. Rumours are added by hand.
+| Row | How it gets there | Label |
+|---|---|---|
+| Shared | Added by Claude on request, after reading a source (any site, filings included), with terms only if the text states them. Ships with the site as `data/seed-rumours.json`, read-only. | none (checked) |
+| Auto-found | A headline scan of Yahoo's news search runs when the dashboard opens and on the **Scan for rumours** button. It adds open takeover-talk headlines about one US-listed company, with no terms. Expires after 30 days; deleting one stops it coming back. | **AUTO-FOUND** |
+| Your own | The **+ Add rumour** form. | none |
+
+Auto-found rows are unverified: the scan reads headlines only. Open the source, and edit the row to confirm it.
+
+**What automatic discovery can and can't do.** The scanner uses only Yahoo's free news search, because the outlets that break rumours don't offer free feeds:
 
 | Source | What's available |
 |---|---|
 | Bloomberg | No public API (Terminal and B-PIPE are paid). Automated access is blocked and against its terms. |
 | WSJ / Dow Jones | Newswires and Factiva are paid. Public RSS has headlines only, and articles are paywalled. |
 | Reuters | Public RSS was discontinued in 2020. The news API is paid (LSEG). |
-| Yahoo Finance search | Free (via `yahoo-finance2`) and returns recent headlines per ticker. But in a test across six queries (about 110 headlines), every link pointed to a Yahoo-hosted copy, never the original Reuters, Bloomberg or WSJ article. Most items also came from secondary sites rather than the outlets that break rumours. |
+| Yahoo Finance search | Free (via `yahoo-finance2`). Every link is a Yahoo-hosted copy, which is accepted as a source. In a test of 8 deal-talk queries, roughly 3 to 5 of about 80 headlines were usable open rumours about a single company. Headlines naming two companies (acquirer and target) are skipped, because the target can't be told apart, so some real rumours (for example Lionsgate and Instacart) are missed. |
 
-Even with a feed, pulling terms out of headlines would mean guessing: "$5bn deal" isn't a per-share price, and "exploring a sale" isn't "in talks". That conflicts with the no-fabrication rule, so a person reads the report and enters the terms.
+Any source can be used for the **shared** rows, since Claude searches the open web rather than a feed. Paywalled pages (Bloomberg, WSJ, Variety, Deadline) can't be read, so terms from them aren't used.
+
+Even with a feed, pulling terms out of headlines would mean guessing: "$5bn deal" isn't a per-share price, and "exploring a sale" isn't "in talks". That conflicts with the no-fabrication rule, so terms are never read out of a headline: they are entered only from a source that was actually read.
 
 ## Known limitations
 
@@ -127,11 +137,13 @@ app/
   deals/[id]/page.tsx      Deal detail
   api/quotes/route.ts      Latest prices for a list of tickers
   api/history/route.ts     Daily closes for one ticker
+  api/rumours/scan/route.ts  Headline scan for possible rumours (Yahoo news)
 lib/
   calc.ts                  All financial math (+ calc.test.ts)
   dealRow.ts               Deal + market data → what the UI shows
   deals.ts                 localStorage store (versioned seed data)
-  rumours.ts               localStorage store for rumoured deals (no seed)
+  rumours.ts               localStorage store for rumoured deals (+ shared ones from data/seed-rumours.json)
+  rumourScan.ts            Headline classifier for the rumour scan (+ useRumourScan.ts hook)
   sources.ts               Labels a rumour's source link (known outlet or its domain); rejects social media
   validate.ts              Add/edit form validation
   useMarketData.ts         Client hook for live prices
@@ -140,6 +152,7 @@ components/                DealTable, DealDetail, PayoffLadder, DealForm, Spread
                            RumourTable, RumourForm, SummaryStrip, StatusBar, Badge,
                            shared UI helpers
 data/seed-deals.json       Real deals seeded on first visit
+data/seed-rumours.json     Shared rumours (read from sources by Claude, terms only if stated)
 ```
 
 ## Disclaimer

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { dropStale, isRumour, parseScanState, readStoredRumours } from "./rumours";
+import seedRumours from "@/data/seed-rumours.json";
+import { dropStale, isRumour, mergeShared, parseScanState, readStoredRumours } from "./rumours";
+import { validateRumour } from "./validate";
 import type { Rumour } from "./types";
 
 const minimal: Rumour = {
@@ -122,5 +124,66 @@ describe("parseScanState", () => {
 
   it("keeps only string tickers", () => {
     expect(parseScanState(JSON.stringify({ lastScan: 1, dismissed: ["WEN", 5, null] })).dismissed).toEqual(["WEN"]);
+  });
+});
+
+describe("shared rumours", () => {
+  const shared: Rumour = { ...minimal, id: "shared-ABC", targetTicker: "ABC" };
+  const mine: Rumour = { ...minimal, id: "mine-XYZ", targetTicker: "XYZ" };
+
+  it("mergeShared puts shared rumours first, marked shared, then the visitor's own", () => {
+    const merged = mergeShared([mine], [shared]);
+    expect(merged.map((r) => r.id)).toEqual(["shared-ABC", "mine-XYZ"]);
+    expect(merged[0].shared).toBe(true);
+    expect(merged[1].shared).toBeUndefined();
+  });
+
+  it("mergeShared hides the visitor's own row for a ticker that is shared (any case)", () => {
+    const duplicate = { ...mine, id: "mine-abc", targetTicker: "abc" };
+    expect(mergeShared([duplicate, mine], [shared]).map((r) => r.id)).toEqual(["shared-ABC", "mine-XYZ"]);
+  });
+
+  it("mergeShared doesn't change what is stored, and works with nothing shared", () => {
+    expect(mergeShared([mine], [])).toEqual([mine]);
+    expect(mergeShared([], [])).toEqual([]);
+  });
+
+  it("dropStale never expires shared rumours", () => {
+    const old = { ...shared, reportDate: "2024-01-01" };
+    expect(dropStale([old], "2026-11-05")).toEqual([old]);
+  });
+});
+
+describe("data/seed-rumours.json", () => {
+  const seeds = seedRumours as Rumour[];
+
+  it("only holds entries that pass the same validation as the add form", () => {
+    for (const r of seeds) {
+      const errors = validateRumour(
+        {
+          targetTicker: r.targetTicker,
+          targetName: r.targetName,
+          acquirerName: r.acquirerName ?? "",
+          sourceUrl: r.sourceUrl,
+          reportDate: r.reportDate,
+          reportedPrice: r.reportedPrice !== undefined ? String(r.reportedPrice) : "",
+          reportedCloseDate: r.reportedCloseDate ?? "",
+        },
+        "9999-12-31",
+      );
+      expect(errors, r.id).toEqual({});
+      expect(isRumour(r), r.id).toBe(true);
+    }
+  });
+
+  it("has unique ids and tickers, ids prefixed shared-, and no auto-found or stored-only fields", () => {
+    expect(new Set(seeds.map((r) => r.id)).size).toBe(seeds.length);
+    expect(new Set(seeds.map((r) => r.targetTicker.toUpperCase())).size).toBe(seeds.length);
+    for (const r of seeds) {
+      expect(r.id.startsWith("shared-"), r.id).toBe(true);
+      expect(r.autoFound, r.id).toBeUndefined();
+      expect(r.headline, r.id).toBeUndefined();
+      expect(r.shared, r.id).toBeUndefined();
+    }
   });
 });

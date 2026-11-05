@@ -1,0 +1,27 @@
+[
+  {
+    "id": "shared-WEN",
+    "targetTicker": "WEN",
+    "targetName": "The Wendy's Company",
+    "acquirerName": "Trian Group and Flynn Group (with BlueFive Capital, Sixth Street Partners)",
+    "sourceUrl": "https://www.cnbc.com/2026/10/28/nelson-peltz-trian-wendys-1point4-billion.html",
+    "reportDate": "2026-10-28",
+    "reportedPrice": 7.35
+  },
+  {
+    "id": "shared-XPOF",
+    "targetTicker": "XPOF",
+    "targetName": "Xponential Fitness, Inc.",
+    "acquirerName": "Fund 1 Investments",
+    "sourceUrl": "https://www.investing.com/news/stock-market-news/xponential-fitness-shares-jump-on-reports-of-takeover-bid-4988071",
+    "reportDate": "2026-10-30"
+  },
+  {
+    "id": "shared-LION",
+    "targetTicker": "LION",
+    "targetName": "Lionsgate Studios Corp.",
+    "acquirerName": "Legendary Entertainment",
+    "sourceUrl": "https://www.bloomberg.com/news/articles/2026-10-20/legendary-revives-lionsgate-takeover-talks-submits-offer",
+    "reportDate": "2026-10-20"
+  }
+]

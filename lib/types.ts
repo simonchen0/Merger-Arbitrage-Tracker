@@ -29,6 +29,9 @@ export type Rumour = {
   // Editing the rumour clears both, which counts as the user having checked it.
   autoFound?: true;
   headline?: string; // the headline the scan found, shown so the row can be judged at a glance
+  // Set when merging in rumours from data/seed-rumours.json (never stored): shown to every
+  // visitor, read-only. Only added after the source was read and checked (see CLAUDE.md).
+  shared?: true;
 };
 
 /** Latest market price from /api/quotes. */

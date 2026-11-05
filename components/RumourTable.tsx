@@ -112,7 +112,7 @@ export function RumourTable({
                     </div>
                   </td>
                   <td className="px-2.5 py-3.5">
-                    <div className={`max-w-[10rem] truncate ${r.acquirerName ? "text-muted" : "italic text-muted"}`} title={r.acquirerName}>
+                    <div className={`max-w-[15rem] truncate ${r.acquirerName ? "text-muted" : "italic text-muted"}`} title={r.acquirerName}>
                       {r.acquirerName ?? NOT_DISCLOSED}
                     </div>
                   </td>
@@ -155,15 +155,18 @@ export function RumourTable({
                     {r.reportedCloseDate && <div className="text-xs text-muted">by {r.reportedCloseDate}</div>}
                   </td>
                   <td className="px-1 py-3.5">
-                    {/* Hidden until the row is hovered or focused; always shown on touch screens. */}
-                    <div className="flex justify-end gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
-                      <button onClick={() => onEdit(r)} aria-label={`Edit ${r.targetTicker} rumour`} title="Edit" className={`${iconButton} hover:text-accent`}>
-                        <PencilIcon className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => onDelete(r)} aria-label={`Delete ${r.targetTicker} rumour`} title="Delete" className={`${iconButton} hover:text-down`}>
-                        <TrashIcon className="h-4 w-4" />
-                      </button>
-                    </div>
+                    {/* Shared rumours ship with the site, so visitors can't change them. */}
+                    {!r.shared && (
+                      /* Hidden until the row is hovered or focused; always shown on touch screens. */
+                      <div className="flex justify-end gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+                        <button onClick={() => onEdit(r)} aria-label={`Edit ${r.targetTicker} rumour`} title="Edit" className={`${iconButton} hover:text-accent`}>
+                          <PencilIcon className="h-4 w-4" />
+                        </button>
+                        <button onClick={() => onDelete(r)} aria-label={`Delete ${r.targetTicker} rumour`} title="Delete" className={`${iconButton} hover:text-down`}>
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
                   </td>
                 </tr>
               );
@@ -249,14 +252,16 @@ function RumourCard({
         {r.autoFound && r.headline && <div className="mt-1 text-xs text-muted">{r.headline}</div>}
       </div>
 
-      <div className="flex divide-x divide-border border-t border-border text-xs">
-        <button onClick={() => onEdit(r)} className="flex-1 py-2.5 text-muted transition-colors hover:text-accent">
-          Edit
-        </button>
-        <button onClick={() => onDelete(r)} className="flex-1 py-2.5 text-muted transition-colors hover:text-down">
-          Delete
-        </button>
-      </div>
+      {!r.shared && (
+        <div className="flex divide-x divide-border border-t border-border text-xs">
+          <button onClick={() => onEdit(r)} className="flex-1 py-2.5 text-muted transition-colors hover:text-accent">
+            Edit
+          </button>
+          <button onClick={() => onDelete(r)} className="flex-1 py-2.5 text-muted transition-colors hover:text-down">
+            Delete
+          </button>
+        </div>
+      )}
     </div>
   );
 }

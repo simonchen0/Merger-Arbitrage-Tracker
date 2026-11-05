@@ -4,7 +4,8 @@
 //
 // Same pattern as lib/deals.ts: useRumours() subscribes components to the stored list, and
 // every change re-renders the subscribers (including other open tabs).
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
+import seedRumours from "@/data/seed-rumours.json";
 import { daysBetween, todayInNewYork } from "./calc";
 import type { Rumour } from "./types";
 
@@ -127,8 +128,9 @@ export function saveRumours(added: Rumour[]): void {
   setRumours([...list.filter((r) => !ids.has(r.id)), ...added]);
 }
 
+/** Everything currently shown: shared rumours plus the visitor's own. */
 export function getRumourList(): Rumour[] {
-  return getRumours();
+  return mergeShared(getRumours());
 }
 
 /** Deleting an auto-found rumour also dismisses its ticker, so the next scan doesn't add it back. */
@@ -156,7 +158,23 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-/** The stored rumours, or null during server render (before the browser takes over). */
+/** Rumours shipped with the site, from data/seed-rumours.json (invalid entries ignored). */
+export const SHARED_RUMOURS: Rumour[] = (seedRumours as unknown[]).filter(isRumour);
+
+/**
+ * The shared rumours (marked `shared`) followed by the visitor's own. If the visitor tracks a
+ * ticker that is also shared, the shared row wins and theirs stays hidden in storage.
+ */
+export function mergeShared(stored: Rumour[], shared: Rumour[] = SHARED_RUMOURS): Rumour[] {
+  const sharedTickers = new Set(shared.map((r) => r.targetTicker.toUpperCase()));
+  return [
+    ...shared.map((r) => ({ ...r, shared: true as const })),
+    ...stored.filter((r) => !sharedTickers.has(r.targetTicker.toUpperCase())),
+  ];
+}
+
+/** The shared and stored rumours, or null during server render (before the browser takes over). */
 export function useRumours(): Rumour[] | null {
-  return useSyncExternalStore(subscribe, getRumours, () => null);
+  const stored = useSyncExternalStore(subscribe, getRumours, () => null);
+  return useMemo(() => (stored === null ? null : mergeShared(stored)), [stored]);
 }
